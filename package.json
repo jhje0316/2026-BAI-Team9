@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "npm run build && npm start",
-    "build": "npm run build:before && npm run build:after",
+    "build": "npm run build:before && npm run build:after && node presentation/build.mjs",
     "build:before": "cd versions/before && vite build --base=/demo/before/",
     "build:after": "cd versions/after && vite build --base=/demo/after/",
     "start": "tsx presentation/server.ts",

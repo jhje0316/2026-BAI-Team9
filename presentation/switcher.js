@@ -121,7 +121,7 @@ function showVersion() {
         frame = document.createElement('iframe');
         frame.title = `${solutionTitle} · ${link.textContent}`;
         frame.addEventListener('load', () => syncFeedback(frame));
-        frame.src = `/demo${link.pathname}/`;
+        frame.src = `/demo${link.pathname}`;
         frames.set(link.pathname, frame);
         demos.append(frame);
       }

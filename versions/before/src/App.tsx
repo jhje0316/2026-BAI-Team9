@@ -110,6 +110,12 @@ export default function App() {
         body: JSON.stringify({ listing, skuRef, locale }),
       });
 
+      if (!response.headers.get('content-type')?.includes('application/json')) {
+        throw new Error(locale === 'ko'
+          ? '실시간 Gemini 실험은 로컬 데모에서 실행할 수 있습니다.'
+          : 'The live Gemini experiment is available in the local demo.');
+      }
+
       const payload = (await response.json()) as {
         evaluation?: TriageEvaluation;
         error?: string;

@@ -24,6 +24,10 @@ npm run dev
 
 이미 빌드한 상태에서는 `npm start`로 바로 실행합니다. 서버를 종료하려면 터미널에서 `Ctrl+C`를 누릅니다.
 
+## Vercel 배포
+
+저장소 루트의 `vercel.json`은 `npm run build`로 생성한 `dist`를 배포합니다. 배포 주소에서도 `/before`와 `/after`로 바로 열 수 있습니다. 이전 버전의 실시간 Gemini 실험은 로컬 서버에서 실행합니다.
+
 ## 피드백 기록
 
 - [4조 피드백과 반영 내역](docs/peer-feedback-before-after.md)

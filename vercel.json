@@ -1,0 +1,16 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
+  "trailingSlash": false,
+  "redirects": [
+    { "source": "/", "destination": "/after", "permanent": false }
+  ],
+  "rewrites": [
+    { "source": "/before", "destination": "/index.html" },
+    { "source": "/after", "destination": "/index.html" },
+    { "source": "/demo/before", "destination": "/demo/before/index.html" },
+    { "source": "/demo/after", "destination": "/demo/after/index.html" }
+  ]
+}
