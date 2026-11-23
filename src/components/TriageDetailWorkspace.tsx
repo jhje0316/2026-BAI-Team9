@@ -15,8 +15,6 @@ import type {
   DecisionDriver,
   GenuineSkuReference,
   HumanActionType,
-  EvidenceReview,
-  GeminiAnalysis,
   Locale,
   RiskClassification,
   SuspectListingRecord,
@@ -27,20 +25,16 @@ import {
   getClassificationLabel,
   getDecisionDriverOptions,
   getHumanActionLabel,
-  getRecommendationLabel,
   getShortRiskLabel,
   UI_COPY,
-  EVIDENCE_COPY,
 } from '../i18n/translations';
-import { buildReviewEvidence, createReportSnapshot, getDecisionGates } from '../domain/evidenceReview';
-import { EvidenceReviewPanel } from './EvidenceReviewPanel';
 import { ProductVisualComparison } from './ProductVisualComparison';
 
 interface TriageDetailWorkspaceProps {
   listing: SuspectListingRecord;
   skuRef: GenuineSkuReference;
   baselineEvaluation: TriageEvaluation;
-  liveEvaluation: GeminiAnalysis | null;
+  liveEvaluation: TriageEvaluation | null;
   experimentNotes: AiExperimentNote[];
   locale: Locale;
   hideRawScore: boolean;
@@ -64,11 +58,9 @@ interface TriageDetailWorkspaceProps {
     action: Exclude<HumanActionType, 'PENDING'>,
     driver: DecisionDriver,
     overrideNote: string,
-    draftText: string,
-    review: EvidenceReview,
-    confirmed: boolean
+    draftText: string
   ) => void;
-  onOpenPackageModal: (review: EvidenceReview) => void;
+  onOpenPackageModal: (draftText: string) => void;
 }
 
 function getClassificationBannerStyle(classification: RiskClassification): {
@@ -130,16 +122,10 @@ export function TriageDetailWorkspace({
 }: TriageDetailWorkspaceProps) {
   const t = UI_COPY[locale];
   const isKo = locale === 'ko';
-  const activeEvaluation = baselineEvaluation;
-  const et = EVIDENCE_COPY[locale];
-  const [review, setReview] = useState<EvidenceReview>({});
-  const [confirmed, setConfirmed] = useState(false);
-  const [recorded, setRecorded] = useState(false);
-  const items = buildReviewEvidence(listing, skuRef, baselineEvaluation, locale, liveEvaluation);
+  const activeEvaluation = liveEvaluation ?? baselineEvaluation;
 
   const [showThresholdRubric, setShowThresholdRubric] = useState(false);
-  const snapshot = createReportSnapshot(listing.id, items, review, locale);
-  const draftText = snapshot.text;
+  const [draftText, setDraftText] = useState(activeEvaluation.draftTakedownSummary);
   const [overrideNote, setOverrideNote] = useState('');
   const [decisionDriver, setDecisionDriver] = useState<DecisionDriver>(
     getDefaultDriverForEvaluation(activeEvaluation)
@@ -153,9 +139,8 @@ export function TriageDetailWorkspace({
   const [expNoteText, setExpNoteText] = useState('');
 
   useEffect(() => {
+    setDraftText(activeEvaluation.draftTakedownSummary);
     setOverrideNote('');
-    setConfirmed(false);
-    setRecorded(false);
     setDecisionDriver(getDefaultDriverForEvaluation(activeEvaluation));
     setSellerInput(listing.sellerId ?? 'LojaSul_BR');
     setTimestampInput(listing.captureTimestamp ?? '2026-11-19T14:30:00Z');
@@ -202,14 +187,6 @@ export function TriageDetailWorkspace({
   };
 
   const caseExperimentNotes = experimentNotes.filter((n) => n.caseId === listing.id);
-  const gates = getDecisionGates({ evaluation: activeEvaluation, items, review, confirmed, rationale: overrideNote, draft: draftText, caseId: listing.id, locale });
-  const changeReview = (next: EvidenceReview) => { setReview(next); setConfirmed(false); setRecorded(false); };
-  const decide = (action: Exclude<HumanActionType, 'PENDING'>) => {
-    if (!gates.canRecord || (action === 'APPROVED_TAKEDOWN' && !gates.canApproveTakedown)) return;
-    onHumanDecision(action, decisionDriver, overrideNote, draftText, review, confirmed);
-    setRecorded(true);
-  };
-
 
   return (
     <div className="flex-1 min-w-0 space-y-5">
@@ -282,7 +259,6 @@ export function TriageDetailWorkspace({
         </div>
       )}
 
-      <p className="text-xs text-[#5A5853]">{et.flow}</p>
       {/* Primary Triage & Evidence Comparison Card */}
       <article className="border border-[#DFDBD2] bg-white">
         {/* Card Header: Unboxed Metadata & Classification Verdict */}
@@ -460,7 +436,7 @@ export function TriageDetailWorkspace({
               <h3 className="text-xs font-semibold text-[#161616]">
                 {t.sectionExperimentHeading}
               </h3>
-              <p className="text-xs text-[#5A5853] mt-0.5">{t.experimentCompareSubtitle} {et.untrusted}. {isKo ? '분류·초안·승인에는 적용되지 않습니다.' : 'Does not control classification, draft or approval.'}</p>
+              <p className="text-xs text-[#5A5853] mt-0.5">{t.experimentCompareSubtitle}</p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
@@ -565,11 +541,16 @@ export function TriageDetailWorkspace({
             locale={locale}
             hideRawScore={hideRawScore}
           />
+          <p className="mt-2 text-[11px] text-[#5A5853]">
+            {activeEvaluation.evidenceChecks[0]?.curationLimitation}
+          </p>
         </div>
 
         {/* Side-by-Side Structured Evidence Table with Data-Curation Origins & Limitations */}
-        <details className="px-6 py-4 border-b border-[#DFDBD2]">
-          <summary className="cursor-pointer text-xs font-semibold text-[#5A5853] mb-2.5">{t.sectionEvidenceHeading}</summary>
+        <div className="px-6 py-4 border-b border-[#DFDBD2]">
+          <h3 className="text-xs font-semibold text-[#5A5853] mb-2.5">
+            {t.sectionEvidenceHeading}
+          </h3>
 
           <div className="overflow-x-auto border border-[#DFDBD2]">
             <table className="w-full text-left border-collapse text-sm">
@@ -715,9 +696,7 @@ export function TriageDetailWorkspace({
               </tbody>
             </table>
           </div>
-        </details>
-
-        <EvidenceReviewPanel items={items} review={review} locale={locale} onChange={changeReview} />
+        </div>
 
         {/* Draft Takedown Report & Human Decision Controls */}
         <div className="px-6 py-4 space-y-4">
@@ -728,10 +707,10 @@ export function TriageDetailWorkspace({
             >
               {t.sectionDraftHeading}
             </label>
-            {snapshot.selectedEvidenceIds.length > 0 && (
+            {!activeEvaluation.isApprovalLocked && (
               <button
                 type="button"
-                onClick={() => onOpenPackageModal(review)}
+                onClick={() => onOpenPackageModal(draftText)}
                 className="text-xs font-medium text-[#E84A27] hover:underline whitespace-nowrap shrink-0"
               >
                 {t.previewPackageBtn}
@@ -741,19 +720,13 @@ export function TriageDetailWorkspace({
 
           <textarea
             id="draft-takedown-textarea"
-            rows={14}
+            rows={3}
             value={draftText}
-            readOnly
-            data-testid="report-draft"
+            disabled={activeEvaluation.isApprovalLocked}
+            onChange={(e) => setDraftText(e.target.value)}
             className="w-full border border-[#CFCAC0] bg-white px-3 py-2.5 text-sm text-[#161616] leading-relaxed disabled:bg-[#F3F1EC] disabled:text-[#5A5853]"
           />
 
-          <p className="text-xs text-[#92400E]" data-testid="unresolved-uncertainties">{et.unresolved}</p>
-          <p className="text-xs text-[#5A5853]">{activeEvaluation.lockReason}</p>
-          <label className="flex items-start gap-2 text-xs"><input type="checkbox" data-testid="confirm-evidence" checked={confirmed} onChange={e => { setConfirmed(e.target.checked); setRecorded(false); }} />{et.confirmation}</label>
-          <p className="text-xs text-[#5A5853]">{et.gates}</p>
-          <p className="text-xs">{et.aiRecommendation}: {getRecommendationLabel(activeEvaluation.recommendedAction, locale)}</p>
-          {recorded && <p role="status" className="text-xs text-[#166534]">{et.saved}</p>}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end pt-2 border-t border-[#EAE6DD]">
             <div className="md:col-span-3">
               <label htmlFor="decision-driver" className="block text-xs font-medium text-[#161616] mb-1">
@@ -781,8 +754,7 @@ export function TriageDetailWorkspace({
                 id="override-note"
                 type="text"
                 value={overrideNote}
-                onChange={(e) => { setOverrideNote(e.target.value); setRecorded(false); }}
-                required
+                onChange={(e) => setOverrideNote(e.target.value)}
                 placeholder={t.overrideNotePlaceholder}
                 className="w-full border border-[#CFCAC0] px-3 py-2 text-xs text-[#161616]"
               />
@@ -791,9 +763,10 @@ export function TriageDetailWorkspace({
             <div className="md:col-span-5 flex flex-wrap items-center justify-end gap-2">
               <button
                 type="button"
-                disabled={!gates.canRecord}
-                onClick={() => decide('DISMISSED_LEGITIMATE')}
-                className={`px-3.5 py-2 text-xs font-medium border whitespace-nowrap shrink-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                onClick={() =>
+                  onHumanDecision('DISMISSED_LEGITIMATE', decisionDriver, overrideNote, draftText)
+                }
+                className={`px-3.5 py-2 text-xs font-medium border whitespace-nowrap shrink-0 transition-colors ${
                   currentHumanAction === 'DISMISSED_LEGITIMATE'
                     ? 'border-[#15803D] bg-[#F0FDF4] text-[#166534]'
                     : 'border-[#CFCAC0] bg-white text-[#161616] hover:bg-[#FAF8F5]'
@@ -804,9 +777,10 @@ export function TriageDetailWorkspace({
 
               <button
                 type="button"
-                disabled={!gates.canRecord}
-                onClick={() => decide('HOLD_VERIFICATION')}
-                className={`px-3.5 py-2 text-xs font-medium border whitespace-nowrap shrink-0 transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${
+                onClick={() =>
+                  onHumanDecision('HOLD_VERIFICATION', decisionDriver, overrideNote, draftText)
+                }
+                className={`px-3.5 py-2 text-xs font-medium border whitespace-nowrap shrink-0 transition-colors ${
                   currentHumanAction === 'HOLD_VERIFICATION'
                     ? 'border-[#B45309] bg-[#FFFBEB] text-[#92400E]'
                     : 'border-[#CFCAC0] bg-white text-[#161616] hover:bg-[#FAF8F5]'
@@ -817,9 +791,11 @@ export function TriageDetailWorkspace({
 
               <button
                 type="button"
-                disabled={!gates.canRecord || !gates.canApproveTakedown}
+                disabled={activeEvaluation.isApprovalLocked}
                 title={activeEvaluation.lockReason ?? t.btnApprove}
-                onClick={() => decide('APPROVED_TAKEDOWN')}
+                onClick={() =>
+                  onHumanDecision('APPROVED_TAKEDOWN', decisionDriver, overrideNote, draftText)
+                }
                 className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium bg-[#E84A27] text-white hover:bg-[#D13D1C] disabled:bg-[#D4CFC7] disabled:text-[#5A5853] disabled:cursor-not-allowed whitespace-nowrap shrink-0 transition-colors"
               >
                 {activeEvaluation.isApprovalLocked && (
@@ -848,7 +824,7 @@ export function TriageDetailWorkspace({
           <div className="px-6 py-5 text-xs text-[#5A5853]">{t.auditEmpty}</div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs [&_td]:align-top">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#FAF8F5] border-b border-[#DFDBD2] text-[#5A5853]">
                   <th className="py-2 px-4">{t.auditColCase}</th>
@@ -867,7 +843,7 @@ export function TriageDetailWorkspace({
                       {log.caseId}
                     </td>
                     <td className="py-2.5 px-4 font-mono text-[#5A5853]">
-                      {getShortRiskLabel(log.aiClassification, locale)}<br />{getRecommendationLabel(log.aiRecommendation, locale)}
+                      {getShortRiskLabel(log.aiClassification, locale)}
                     </td>
                     <td className="py-2.5 px-4 font-medium text-[#161616]">
                       {getHumanActionLabel(log.humanAction, locale)}
@@ -883,15 +859,8 @@ export function TriageDetailWorkspace({
                         <span className="text-[#5A5853]">{t.overrideNo}</span>
                       )}
                     </td>
-                    <td className="py-2.5 px-4 text-[#5A5853]">{log.note}
-                      <details className="mt-2"><summary className="cursor-pointer">{et.snapshot}</summary>
-                        <p>{log.selectedEvidenceIds.join(', ')}</p>
-                        <p>{log.draftSnapshot.version}</p>
-                        <ul>{log.evidenceStates.map(item => <li key={item.id}>{item.id}: {item.review === 'reviewed' ? et.reviewed : isKo ? '미검토' : 'Unreviewed'} · {item.included ? et.include : isKo ? '제외' : 'Excluded'} · {item.verification === 'untrusted_ai' ? et.untrusted : et.unverified}</li>)}</ul>
-                        <pre className="whitespace-pre-wrap min-w-64 max-w-lg text-xs mt-2">{log.draftSnapshot.text}</pre>
-                      </details>
-                    </td>
-                    <td className="py-2.5 px-4 text-right font-mono tabular-nums text-[#5A5853] break-all min-w-28">
+                    <td className="py-2.5 px-4 text-[#5A5853]">{log.note || '—'}</td>
+                    <td className="py-2.5 px-4 text-right font-mono tabular-nums text-[#5A5853]">
                       {log.timestamp}
                     </td>
                   </tr>

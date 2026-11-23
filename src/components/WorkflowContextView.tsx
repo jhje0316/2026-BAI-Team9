@@ -46,10 +46,10 @@ export function WorkflowContextView({
         {
           num: '04',
           owner: '생성형 AI + 법무 검토',
-          title: '선택 근거 초안 및 사람의 판단',
+          title: '3종 신고 패키지 편성 및 최종 승인',
           detail:
-            '검토자가 선택한 합성 근거로 조사용 초안을 작성합니다. 모든 항목 검토, 선택 확인, 판단 사유를 거쳐 보류·기각을 기록합니다. 독립 검증 전 실제 신고 승인은 잠겨 있습니다.',
-          scopeNote: '선택 근거 초안·미리보기 지원, 실제 신고 승인·자동 제출 제외',
+            '검증된 사실을 기반으로 비교 시트, 원 권리 증빙, 침해 신고서 초안을 묶어 편성하며, 외부 플랫폼 제출은 인간 승인 후 수동으로 진행합니다.',
+          scopeNote: '초안 작성 및 패키지 미리보기 지원 (자동 제출 제외)',
         },
       ]
     : [
@@ -81,10 +81,10 @@ export function WorkflowContextView({
         {
           num: '04',
           owner: 'Generative AI + Legal',
-          title: 'Prepare selected evidence review draft',
+          title: 'Prepare 3-Document Report Package',
           detail:
-            'Builds an investigation draft from reviewer-selected synthetic evidence. Hold or dismiss requires review, confirmation and rationale. Takedown stays locked without independent evidence.',
-          scopeNote: 'Selected evidence preview supported; actual takedown approval and submission unavailable',
+            'Compiles Comparison Sheet, Original Proof of Rights, and Infringement Report draft from verified facts for final human authorization.',
+          scopeNote: 'Draft preview supported; automated platform filing excluded',
         },
       ];
 
@@ -207,8 +207,8 @@ export function WorkflowContextView({
                 </th>
                 <td className="py-3 px-4 text-[#44423D] leading-relaxed">
                   {isKo
-                    ? '증거별 검토·선택, 선택 근거로 작성한 초안, 필수 메타데이터 및 독립 검증 승인 잠금, 필수 판단 사유, 증거 상태·초안 스냅샷 감사 로그. Gemini는 별도 미검증 실험 해석으로 표시됩니다.'
-                    : 'Per-item review and selection, selected-evidence drafts, mandatory metadata and independent-evidence locks, required rationale, and audit snapshots. Gemini is displayed separately as untrusted experimental interpretation.'}
+                    ? '단일 리스팅 대조 심사 워크스페이스, 결정론적 필수 증거 잠금(Hold Lock) 및 인라인 필드 보완, 블라인드 점수 테스트 모드, 인간 의사결정·재정의(Override) 로그, 실시간 Gemini(gemini-4-hydrogen) 비교 분석.'
+                    : 'Single-listing side-by-side triage workspace, deterministic mandatory evidence lock & inline completion, blind-score test mode, human decision/override log, and live Gemini (gemini-4-hydrogen) side-by-side experiment.'}
                 </td>
               </tr>
               <tr>
@@ -227,8 +227,8 @@ export function WorkflowContextView({
                 </th>
                 <td className="py-3 px-4 text-[#44423D] leading-relaxed">
                   {isKo
-                    ? '타 그룹 피드백은 제공받아 반영했습니다. 개선 후 사용성 재평가, 실제 데이터의 정밀도·재현율, 플랫폼 신고 수용률은 아직 검증되지 않았습니다.'
-                    : 'Feedback from another group has been incorporated. Post-change usability, real-world precision/recall and marketplace acceptance rates remain unvalidated.'}
+                    ? '타 그룹 대상 피어 테스트 결과(진행 예정), 수천 건의 실제 다국어 마켓플레이스 데이터에서의 정밀도/재현율(Precision/Recall), 실제 플랫폼 신고 수용률.'
+                    : 'Peer-group usability feedback (pending), real-world precision/recall across thousands of noisy international listings, and actual marketplace takedown acceptance rates.'}
                 </td>
               </tr>
               <tr>

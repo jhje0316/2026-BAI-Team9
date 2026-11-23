@@ -1,5 +1,5 @@
 import type { Locale, VisualDefectMode } from '../domain/types';
-import { EVIDENCE_COPY, UI_COPY } from '../i18n/translations';
+import { UI_COPY } from '../i18n/translations';
 
 interface ProductVisualComparisonProps {
   sku: string;
@@ -195,8 +195,7 @@ export function ProductVisualComparison({
         : 'text-[#B91C1C]';
 
   return (
-    <div>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
       <div className="border border-[#DFDBD2] bg-[#FAF8F5] p-3">
         <div className="flex items-center justify-between text-xs text-[#5A5853] mb-2">
           <span className="font-medium text-[#161616]">{t.collectedCaptureTitle}</span>
@@ -228,13 +227,10 @@ export function ProductVisualComparison({
         </div>
         <p className="mt-2 text-xs text-[#44423D] leading-relaxed">
           {locale === 'ko'
-            ? `${productName} 합성 카탈로그 실루엣, 스티칭 및 각인 예시`
-            : `Synthetic ${productName} catalog geometry, stitch spacing & stamped mark`}
+            ? `${productName} 공식 스튜디오 실루엣, 스티칭 간격 및 각인 규격`
+            : `Official ${productName} studio geometry, stitch spacing & stamped mark`}
         </p>
       </div>
-      </div>
-      <p data-testid="cv-explanation" className="mt-3 text-xs text-[#44423D] leading-relaxed">{EVIDENCE_COPY[locale].scoreExplanation}</p>
-      <p className="mt-1 text-[11px] text-[#5A5853]">{EVIDENCE_COPY[locale].illustrationNotice}</p>
     </div>
   );
 }

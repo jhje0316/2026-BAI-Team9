@@ -115,10 +115,6 @@ export interface AuditLogEntry {
   caseId: string;
   productName: string;
   aiClassification: RiskClassification;
-  aiRecommendation: Exclude<HumanActionType, 'PENDING'>;
-  selectedEvidenceIds: EvidenceId[];
-  evidenceStates: ReportSnapshot['evidenceStates'];
-  draftSnapshot: ReportSnapshot;
   humanAction: Exclude<HumanActionType, 'PENDING'>;
   decisionDriver: DecisionDriver;
   overrodeAi: boolean;
@@ -131,47 +127,4 @@ export interface AiExperimentNote {
   issueType: 'NONE' | 'INCORRECT' | 'UNCLEAR' | 'UNSUPPORTED' | 'INCONSISTENT';
   note: string;
   timestamp: string;
-}
-
-export type EvidenceId = 'wording' | 'price' | 'visual' | 'seller' | 'capture' | 'rights' | 'ai';
-export type EvidenceKind = 'synthetic_fact' | 'rule_indicator' | 'simulated_cv' | 'ai_interpretation';
-export interface ReviewEvidence {
-  id: EvidenceId;
-  name: string;
-  kind: EvidenceKind;
-  source: string;
-  value: string;
-  simulated: boolean;
-  verification: 'synthetic_unverified' | 'untrusted_ai';
-  uncertainty: string;
-  available: boolean;
-  reportable: boolean;
-  facts: string[];
-  indicators: string[];
-}
-export type EvidenceReviewState =
-  | { status: 'unreviewed'; included: false }
-  | { status: 'reviewed'; included: boolean };
-export type EvidenceReview = Partial<Record<EvidenceId, EvidenceReviewState>>;
-export interface GeminiAnalysis {
-  classification: RiskClassification;
-  recommendedAction: Exclude<HumanActionType, 'PENDING'>;
-  rationaleBullets: string[];
-  caveats: string[];
-}
-export interface ReportSnapshot {
-  version: 'evidence-draft-v1';
-  caseId: string;
-  locale: Locale;
-  text: string;
-  selectedEvidenceIds: EvidenceId[];
-  evidenceStates: {
-    id: EvidenceId;
-    review: EvidenceReviewState['status'];
-    included: boolean;
-    verification: ReviewEvidence['verification'];
-    simulated: boolean;
-    value: string;
-    source: string;
-  }[];
 }
