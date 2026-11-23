@@ -6,9 +6,14 @@ import { SampleDatasetView } from './components/SampleDatasetView';
 import { TriageDetailWorkspace } from './components/TriageDetailWorkspace';
 import { WorkflowContextView } from './components/WorkflowContextView';
 import { GENUINE_SKU_CATALOG, SYNTHETIC_LISTING_CASES } from './domain/syntheticCases';
+import { buildReviewEvidence, createReportSnapshot, recordHumanDecision } from './domain/evidenceReview';
+import { parseGeminiAnalysis } from './domain/geminiBoundary';
 import { evaluateDeterministicTriage } from './domain/triageRules';
 import type {
   AiExperimentNote,
+  EvidenceReview,
+  GeminiAnalysis,
+  ReportSnapshot,
   AuditLogEntry,
   DecisionDriver,
   HumanActionType,
@@ -29,7 +34,7 @@ export default function App() {
   const [hideRawScore, setHideRawScore] = useState(false);
 
   const [humanActions, setHumanActions] = useState<Record<string, HumanActionType>>({});
-  const [liveEvaluations, setLiveEvaluations] = useState<Record<string, TriageEvaluation>>({});
+  const [liveEvaluations, setLiveEvaluations] = useState<Record<string, GeminiAnalysis>>({});
   const [auditLogs, setAuditLogs] = useState<AuditLogEntry[]>([]);
   const [experimentNotes, setExperimentNotes] = useState<AiExperimentNote[]>([]);
 
@@ -37,10 +42,7 @@ export default function App() {
   const [liveError, setLiveError] = useState<string | null>(null);
 
   const [isCustomModalOpen, setIsCustomModalOpen] = useState(false);
-  const [packageModalState, setPackageModalState] = useState<{
-    open: boolean;
-    draftText: string;
-  }>({ open: false, draftText: '' });
+  const [packageSnapshot, setPackageSnapshot] = useState<ReportSnapshot | null>(null);
 
   const t = UI_COPY[locale];
 
@@ -56,30 +58,8 @@ export default function App() {
     return evaluateDeterministicTriage(listing, skuRef, locale);
   };
 
-  const getLiveSyncedForCase = (
-    listing: SuspectListingRecord,
-    baseline: TriageEvaluation
-  ): TriageEvaluation | null => {
-    const live = liveEvaluations[listing.id];
-    if (!live) return null;
-    return {
-      ...live,
-      isLegitimateResaleContext: baseline.isLegitimateResaleContext,
-      isApprovalLocked: baseline.isApprovalLocked,
-      lockReason: baseline.lockReason,
-      mandatoryAudit: baseline.mandatoryAudit,
-      classification: !baseline.mandatoryAudit.valid
-        ? 'HOLD_MISSING_DATA'
-        : live.classification,
-      draftTakedownSummary: !baseline.mandatoryAudit.valid
-        ? baseline.draftTakedownSummary
-        : live.draftTakedownSummary,
-    };
-  };
-
   const baselineEvaluation = getBaselineForCase(selectedListing);
-  const liveEvaluation = getLiveSyncedForCase(selectedListing, baselineEvaluation);
-  const activeEvaluation = liveEvaluation ?? baselineEvaluation;
+  const liveEvaluation = liveEvaluations[JSON.stringify([selectedListing, locale])] ?? null;
 
   const queueItems: QueueCaseItem[] = useMemo(
     () =>
@@ -89,40 +69,30 @@ export default function App() {
           GENUINE_SKU_CATALOG[listing.matchedSku],
           locale
         );
-        const live = getLiveSyncedForCase(listing, base);
         return {
           listing,
-          classification: (live ?? base).classification,
+          classification: base.classification,
           humanAction: humanActions[listing.id] ?? 'PENDING',
         };
       }),
-    [cases, locale, humanActions, liveEvaluations]
+    [cases, locale, humanActions]
   );
 
   const runLiveGeminiForListing = async (listing: SuspectListingRecord) => {
     setIsAnalyzingLive(true);
     setLiveError(null);
     try {
-      const skuRef = GENUINE_SKU_CATALOG[listing.matchedSku];
       const response = await fetch('/api/triage/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ listing, skuRef, locale }),
+        body: JSON.stringify({ listing, locale }),
       });
 
-      const payload = (await response.json()) as {
-        evaluation?: TriageEvaluation;
-        error?: string;
-      };
-
-      if (!response.ok || !payload.evaluation) {
-        throw new Error(payload.error || `Request failed with status ${response.status}`);
-      }
-
-      setLiveEvaluations((prev) => ({
-        ...prev,
-        [listing.id]: payload.evaluation!,
-      }));
+      const payload: unknown = await response.json();
+      const analysis = typeof payload === 'object' && payload !== null && 'analysis' in payload
+        ? parseGeminiAnalysis(payload.analysis) : null;
+      if (!response.ok || !analysis) throw new Error(locale === 'ko' ? 'Gemini 응답을 사용할 수 없습니다. 규칙 기준선과 검토 게이트를 유지합니다.' : 'Gemini unavailable or invalid. Baseline and review gates remain active.');
+      setLiveEvaluations(prev => ({ ...prev, [JSON.stringify([listing, locale])]: analysis }));
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to run live Gemini triage.';
       setLiveError(message);
@@ -154,45 +124,21 @@ export default function App() {
           : item
       )
     );
-    setLiveEvaluations((prev) => {
-      const next = { ...prev };
-      delete next[selectedListing.id];
-      return next;
-    });
   };
 
   const handleHumanDecision = (
-    action: Exclude<HumanActionType, 'PENDING'>,
-    driver: DecisionDriver,
-    overrideNote: string,
-    draftText: string
+    action: Exclude<HumanActionType, 'PENDING'>, driver: DecisionDriver, rationale: string,
+    draft: string, review: EvidenceReview, confirmed: boolean,
   ) => {
-    setHumanActions((prev) => ({
-      ...prev,
-      [selectedListing.id]: action,
-    }));
-
-    const overrodeAi = action !== activeEvaluation.recommendedAction;
-    const nowTime = new Date().toISOString().slice(11, 19) + ' UTC';
-
-    const entry: AuditLogEntry = {
-      id: `${selectedListing.id}-${Date.now()}`,
-      caseId: selectedListing.id,
-      productName:
-        locale === 'ko' ? selectedSkuRef.productNameKo : selectedSkuRef.productName,
-      aiClassification: activeEvaluation.classification,
-      humanAction: action,
-      decisionDriver: driver,
-      overrodeAi,
-      note: overrideNote.trim(),
-      timestamp: nowTime,
-    };
-
-    setAuditLogs((prev) => [entry, ...prev]);
-
-    if (action === 'APPROVED_TAKEDOWN') {
-      setPackageModalState({ open: true, draftText });
-    }
+    const items = buildReviewEvidence(selectedListing, selectedSkuRef, baselineEvaluation, locale, liveEvaluation);
+    const entry = recordHumanDecision({ action, driver, rationale, draft, review, confirmed,
+      evaluation: baselineEvaluation, items, caseId: selectedListing.id, locale,
+      productName: locale === 'ko' ? selectedSkuRef.productNameKo : selectedSkuRef.productName,
+      timestamp: new Date().toISOString(),
+    });
+    if (!entry) return;
+    setHumanActions(prev => ({ ...prev, [selectedListing.id]: action }));
+    setAuditLogs(prev => [entry, ...prev]);
   };
 
   const handleSaveExperimentNote = (
@@ -340,6 +286,7 @@ export default function App() {
               onSelect={handleSelectCase}
             />
             <TriageDetailWorkspace
+              key={JSON.stringify([selectedListing, liveEvaluation])}
               listing={selectedListing}
               skuRef={selectedSkuRef}
               baselineEvaluation={baselineEvaluation}
@@ -357,9 +304,7 @@ export default function App() {
               onSaveExperimentNote={handleSaveExperimentNote}
               onCompleteMissingFields={handleCompleteMissingFields}
               onHumanDecision={handleHumanDecision}
-              onOpenPackageModal={(draftText) =>
-                setPackageModalState({ open: true, draftText })
-              }
+              onOpenPackageModal={review => setPackageSnapshot(createReportSnapshot(selectedListing.id, buildReviewEvidence(selectedListing, selectedSkuRef, baselineEvaluation, locale, liveEvaluation), review, locale))}
             />
           </div>
         )}
@@ -401,13 +346,8 @@ export default function App() {
       />
 
       <ReportPackageModal
-        isOpen={packageModalState.open}
-        locale={locale}
-        onClose={() => setPackageModalState({ open: false, draftText: '' })}
-        listing={selectedListing}
-        skuRef={selectedSkuRef}
-        evaluation={activeEvaluation}
-        draftText={packageModalState.draftText}
+        snapshot={packageSnapshot}
+        onClose={() => setPackageSnapshot(null)}
       />
     </div>
   );

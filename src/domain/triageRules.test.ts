@@ -40,12 +40,12 @@ test('separates legitimate secondhand resale from counterfeit infringement in bo
   assert.equal(koResult.classification, 'LOW_RISK');
   assert.equal(koResult.isLegitimateResaleContext, true);
   assert.equal(koResult.recommendedAction, 'DISMISSED_LEGITIMATE');
-  assert.equal(koResult.isApprovalLocked, false);
-  assert.ok(koResult.rationaleBullets[0].includes('중고 리셀'));
+  assert.equal(koResult.isApprovalLocked, true);
+  assert.ok(koResult.rationaleBullets.some(b => b.includes('중고 리셀')));
 
   const enResult = evaluateDeterministicTriage(resaleCase, skuRef, 'en');
   assert.equal(enResult.classification, 'LOW_RISK');
-  assert.ok(enResult.rationaleBullets[0].includes('First-sale / resale'));
+  assert.ok(enResult.rationaleBullets.some(b => b.includes('First-sale / resale')));
 });
 
 test('classifies clear Spanish AJOU ARC replica as HIGH_RISK and generates Korean/English draft', () => {
@@ -54,9 +54,10 @@ test('classifies clear Spanish AJOU ARC replica as HIGH_RISK and generates Korea
 
   const koResult = evaluateDeterministicTriage(highRiskCase, skuRef, 'ko');
   assert.equal(koResult.classification, 'HIGH_RISK');
-  assert.equal(koResult.recommendedAction, 'APPROVED_TAKEDOWN');
-  assert.equal(koResult.isApprovalLocked, false);
-  assert.ok(koResult.draftTakedownSummary.includes('AJOU ARC 숄더백'));
+  assert.equal(koResult.recommendedAction, 'HOLD_VERIFICATION');
+  assert.equal(koResult.isApprovalLocked, true);
+  assert.ok(koResult.draftTakedownSummary.includes('검증 요청 초안'));
+  assert.ok(!koResult.draftTakedownSummary.includes('0.42'));
   assert.equal(koResult.evidenceChecks.length, 4);
   assert.ok(koResult.evidenceChecks[0].curationLimitation.length > 0);
 });
@@ -83,7 +84,7 @@ test('always enforces hard approval lock when mandatory audit fields are missing
   assert.equal(evalResult.isApprovalLocked, true);
 });
 
-test('completing missing audit fields unlocks gate and re-evaluates risk', () => {
+test('completing synthetic fields passes metadata gate but never authenticates evidence', () => {
   const incompleteCase = SYNTHETIC_LISTING_CASES.find((c) => c.id === 'AJOU-SYN-005')!;
   const skuRef = GENUINE_SKU_CATALOG[incompleteCase.matchedSku];
   const completed = {
@@ -96,6 +97,6 @@ test('completing missing audit fields unlocks gate and re-evaluates risk', () =>
 
   const result = evaluateDeterministicTriage(completed, skuRef, 'ko');
   assert.equal(result.mandatoryAudit.valid, true);
-  assert.equal(result.isApprovalLocked, false);
+  assert.equal(result.isApprovalLocked, true);
   assert.equal(result.classification, 'HIGH_RISK');
 });
