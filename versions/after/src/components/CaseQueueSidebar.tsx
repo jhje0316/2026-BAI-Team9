@@ -1,4 +1,5 @@
 import { AlertTriangle, CheckCircle2, Clock, ShieldAlert } from 'lucide-react';
+import { useState } from 'react';
 import type {
   HumanActionType,
   Locale,
@@ -6,6 +7,7 @@ import type {
   SuspectListingRecord,
 } from '../domain/types';
 import { getHumanActionLabel, getShortRiskLabel, UI_COPY } from '../i18n/translations';
+import { FeedbackHighlight } from '../../../../presentation/FeedbackHighlight';
 
 export interface QueueCaseItem {
   listing: SuspectListingRecord;
@@ -53,6 +55,7 @@ export function CaseQueueSidebar({
   onSelect,
 }: CaseQueueSidebarProps) {
   const t = UI_COPY[locale];
+  const [queueExpanded, setQueueExpanded] = useState(false);
 
   return (
     <aside
@@ -63,12 +66,15 @@ export function CaseQueueSidebar({
         <h2 className="text-sm font-semibold text-[#161616]">
           {t.queueTitle}
         </h2>
-        <span className="text-xs font-mono tabular-nums text-[#5A5853]">
-          {items.length} {t.casesCountSuffix}
-        </span>
+        <button type="button" aria-controls="sample-case-queue" aria-expanded={queueExpanded} data-feedback-disclosure="resale"
+          className="rounded border border-[#DFDBD2] px-2.5 py-1 text-xs font-semibold lg:hidden"
+          onClick={() => setQueueExpanded(expanded => !expanded)}>
+          {locale === 'ko' ? '사례 바꾸기' : 'Choose sample'}
+        </button>
+        <span className="hidden text-xs font-mono tabular-nums text-[#5A5853] lg:inline">{items.length} {t.casesCountSuffix}</span>
       </div>
 
-      <ul className="divide-y divide-[#EAE6DD]">
+      <ul id="sample-case-queue" className={`divide-y divide-[#EAE6DD] ${queueExpanded ? 'block' : 'hidden lg:block'}`}>
         {items.map((item) => {
           const isSelected = item.listing.id === selectedId;
           const riskText = getShortRiskLabel(item.classification, locale);
@@ -82,10 +88,13 @@ export function CaseQueueSidebar({
               : item.listing.listingTitle;
 
           return (
-            <li key={item.listing.id}>
+            <li key={item.listing.id} className="peer-feedback-region">
               <button
                 type="button"
-                onClick={() => onSelect(item.listing.id)}
+                onClick={() => {
+                  onSelect(item.listing.id);
+                  setQueueExpanded(false);
+                }}
                 aria-current={isSelected ? 'true' : undefined}
                 className={`w-full text-left px-4 py-3 transition-colors focus-visible:outline-2 focus-visible:outline-offset-[-2px] focus-visible:outline-[#E84A27] ${
                   isSelected
@@ -128,12 +137,13 @@ export function CaseQueueSidebar({
                   <div className="mt-2 h-0.5 w-full bg-[#E84A27]" aria-hidden="true" />
                 )}
               </button>
+              {item.listing.id === 'AJOU-SYN-002' && <FeedbackHighlight topic="resale" locale={locale} />}
             </li>
           );
         })}
       </ul>
 
-      <div className="px-4 py-3 border-t border-[#DFDBD2] bg-[#FAF8F5] text-xs text-[#5A5853] leading-relaxed">
+      <div className={`px-4 py-3 border-t border-[#DFDBD2] bg-[#FAF8F5] text-xs text-[#5A5853] leading-relaxed ${queueExpanded ? 'block' : 'hidden lg:block'}`}>
         {t.queueFooter}
       </div>
     </aside>

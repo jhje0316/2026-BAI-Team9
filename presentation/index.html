@@ -1,0 +1,41 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>AI Anti-Counterfeit Solution · 버전 비교</title>
+    <link rel="stylesheet" href="/switcher.css" />
+    <script type="module" src="/switcher.js"></script>
+  </head>
+  <body>
+    <header>
+      <span class="brand">AI Anti-Counterfeit Solution</span>
+      <div class="presentation-controls">
+        <nav aria-label="발표 버전">
+          <a href="/before" hreflang="ko">이전 버전</a>
+          <a href="/after" hreflang="ko">최신 버전</a>
+        </nav>
+        <button id="feedback-toggle" type="button" aria-pressed="false" aria-controls="demos">
+          <span class="feedback-toggle-icon" aria-hidden="true"></span>
+          변경점 표시
+        </button>
+        <button id="feedback-list-toggle" type="button" aria-expanded="false" aria-controls="feedback-panel" hidden>변경 목록</button>
+      </div>
+    </header>
+    <div class="presentation-content">
+      <main id="demos" aria-label="프로토타입">
+        <noscript>
+          <p>JavaScript를 켜면 버전별 데모를 열 수 있습니다.</p>
+        </noscript>
+      </main>
+      <aside id="feedback-panel" aria-labelledby="feedback-title" hidden>
+        <div class="feedback-panel-header">
+          <h2 id="feedback-title" tabindex="-1">4조 피어 피드백</h2>
+          <button id="feedback-list-close" type="button" aria-label="변경 목록 닫기">×</button>
+        </div>
+        <ol id="feedback-list"></ol>
+        <p id="feedback-status" role="status" hidden></p>
+      </aside>
+    </div>
+  </body>
+</html>

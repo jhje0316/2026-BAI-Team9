@@ -1,5 +1,7 @@
 # Peer feedback verification
 
+This report records verification of the original peer-feedback revision. See the [current demo README](../README.md) for commands and URLs for the combined presentation.
+
 ## Story and tested scope
 
 A reviewer opens `AJOU-SYN-001`, reads the simulated risk explanation, reviews the evidence, selects report claims, inspects the same draft in the package, and records a reasoned Hold decision. The log preserves the exact decision snapshot. Gemini responses cannot change the deterministic workflow.

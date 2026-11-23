@@ -88,7 +88,7 @@ async function startServer() {
       ? res.sendFile(path.join(dist, 'index.html')) : res.status(404).send('Production build not found.'));
   }
   const port = Number(process.env.PORT || 3000);
-  app.listen(port, '0.0.0.0', () => console.info(`AJOU Brand Protection Prototype listening on http://localhost:${port}`));
+  app.listen(port, '0.0.0.0', () => console.info(`AI Anti-Counterfeit Solution listening on http://localhost:${port}`));
 }
 
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {

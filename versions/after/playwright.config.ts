@@ -6,5 +6,5 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   use: { baseURL: 'http://localhost:3000', channel: 'chrome', viewport: { width: 1440, height: 1000 } },
-  webServer: { command: 'npm run dev', url: 'http://localhost:3000/api/health', reuseExistingServer: true },
+  webServer: { command: 'npm run dev:after', url: 'http://localhost:3000/api/health', reuseExistingServer: true },
 });

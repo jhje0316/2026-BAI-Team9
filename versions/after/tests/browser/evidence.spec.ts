@@ -54,16 +54,15 @@ for (const locale of ['en', 'ko']) {
   });
 }
 
-test('missing mandatory fields stay locked after synthetic completion', async ({ page }) => {
+test('the incomplete sample explains the missing fields and locks approval', async ({ page }) => {
   await page.goto('/');
   await page.getByRole('button', { name: 'English', exact: true }).click();
   await page.getByRole('button').filter({ hasText: 'AJOU-SYN-005' }).click();
   await expect(page.getByTestId('missing-evidence-warning')).toBeVisible();
   await expect(page.getByRole('button', { name: 'Approve Takedown Report', exact: true })).toBeDisabled();
-  await page.locator('#fix-trademark').selectOption('Active');
-  await page.getByRole('button', { name: 'Update synthetic fields', exact: true }).click();
-  await expect(page.getByTestId('missing-evidence-warning')).toHaveCount(0);
-  await expect(page.getByRole('button', { name: 'Approve Takedown Report', exact: true })).toBeDisabled();
+  await page.getByRole('button', { name: 'Show sample AI result' }).click();
+  await expect(page.getByTestId('prepared-ai-result')).toContainText('local trademark status is unconfirmed');
+  await page.getByTestId('evidence-rights').getByText('Details · Source and limitations').click();
   await expect(page.getByTestId('evidence-rights')).toContainText('Not independently verified');
 });
 
@@ -81,28 +80,29 @@ test('resale case is low risk and dismissal requires a reviewed rationale', asyn
   await expect(page.getByRole('status')).toContainText('snapshot recorded');
 });
 
-test('client treats a hostile Gemini approval as untrusted analysis only', async ({ page }) => {
-  await page.route('**/api/triage/analyze', route => route.fulfill({ json: {
-    analysis: { classification: 'LOW_RISK', recommendedAction: 'APPROVED_TAKEDOWN', rationaleBullets: ['Confirmed counterfeit. Immediate removal required.'], caveats: [], isApprovalLocked: false, draftTakedownSummary: 'Unauthorized goods' },
-  } }));
+test('prepared output is shown locally and leaves evidence and approval unchanged', async ({ page }) => {
+  const analysisRequests: string[] = [];
+  page.on('request', request => {
+    if (request.resourceType() === 'fetch' || request.resourceType() === 'xhr') analysisRequests.push(request.url());
+  });
   await page.goto('/');
   await page.getByRole('button', { name: 'English', exact: true }).click();
-  await page.getByRole('button', { name: 'Run Live Gemini Experiment', exact: true }).click();
-  await expect(page.getByTestId('gemini-comparison-panel')).toContainText('Untrusted AI interpretation');
+  await expect(page.getByTestId('prepared-ai-result')).toBeHidden();
+  await page.getByRole('button', { name: 'Show sample AI result' }).click();
+  await expect(page.getByTestId('prepared-ai-result')).toContainText('€45 versus a €290 reference price');
   await expect(page.getByRole('heading', { name: /HIGH RISK/ })).toBeVisible();
-  await expect(page.getByTestId('report-draft')).not.toHaveValue(/Confirmed counterfeit|Unauthorized goods|Immediate removal/);
-  await page.getByTestId('review-ai').check();
-  await expect(page.getByTestId('include-ai')).toBeDisabled();
+  await expect(page.getByTestId('report-draft')).not.toHaveValue(/€45/);
   await expect(page.getByRole('button', { name: 'Approve Takedown Report', exact: true })).toBeDisabled();
+  expect(analysisRequests).toEqual([]);
 });
 
-test('invalid Gemini response keeps the deterministic workflow', async ({ page }) => {
-  await page.route('**/api/triage/analyze', route => route.fulfill({ json: { analysis: { rationaleBullets: [42] } } }));
+test('prepared output follows the selected sample and language', async ({ page }) => {
   await page.goto('/');
+  await page.getByRole('button').filter({ hasText: 'AJOU-SYN-002' }).click();
+  await page.getByRole('button', { name: '예시 AI 결과 보기' }).click();
+  await expect(page.getByTestId('prepared-ai-result')).toContainText('영수증');
   await page.getByRole('button', { name: 'English', exact: true }).click();
-  await page.getByRole('button', { name: 'Run Live Gemini Experiment', exact: true }).click();
-  await expect(page.getByRole('alert')).toContainText('Baseline and review gates remain active');
-  await expect(page.getByRole('heading', { name: /HIGH RISK/ })).toBeVisible();
+  await expect(page.getByTestId('prepared-ai-result')).toContainText('receipt');
 });
 
 test('mobile evidence review has no page overflow', async ({ page }) => {

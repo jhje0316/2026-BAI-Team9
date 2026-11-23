@@ -4,23 +4,18 @@ import {
   CheckCircle2,
   ChevronDown,
   ChevronUp,
-  EyeOff,
   Lock,
   Sparkles,
-  Unlock,
 } from 'lucide-react';
 import type {
-  AiExperimentNote,
   AuditLogEntry,
   DecisionDriver,
   GenuineSkuReference,
   HumanActionType,
   EvidenceReview,
-  GeminiAnalysis,
   Locale,
   RiskClassification,
   SuspectListingRecord,
-  TrademarkStatus,
   TriageEvaluation,
 } from '../domain/types';
 import {
@@ -35,31 +30,16 @@ import {
 import { buildReviewEvidence, createReportSnapshot, getDecisionGates } from '../domain/evidenceReview';
 import { EvidenceReviewPanel } from './EvidenceReviewPanel';
 import { ProductVisualComparison } from './ProductVisualComparison';
+import { FeedbackHighlight } from '../../../../presentation/FeedbackHighlight';
 
 interface TriageDetailWorkspaceProps {
   listing: SuspectListingRecord;
   skuRef: GenuineSkuReference;
   baselineEvaluation: TriageEvaluation;
-  liveEvaluation: GeminiAnalysis | null;
-  experimentNotes: AiExperimentNote[];
+  exampleSummary: string;
   locale: Locale;
-  hideRawScore: boolean;
   currentHumanAction: HumanActionType;
   auditLogs: AuditLogEntry[];
-  isAnalyzingLive: boolean;
-  liveError: string | null;
-  onLocaleChange: (locale: Locale) => void;
-  onToggleBlindScore: (hide: boolean) => void;
-  onRunLiveGemini: () => void;
-  onSaveExperimentNote: (
-    issueType: AiExperimentNote['issueType'],
-    note: string
-  ) => void;
-  onCompleteMissingFields: (updates: {
-    sellerId: string;
-    captureTimestamp: string;
-    trademarkStatus: TrademarkStatus;
-  }) => void;
   onHumanDecision: (
     action: Exclude<HumanActionType, 'PENDING'>,
     driver: DecisionDriver,
@@ -112,19 +92,10 @@ export function TriageDetailWorkspace({
   listing,
   skuRef,
   baselineEvaluation,
-  liveEvaluation,
-  experimentNotes,
+  exampleSummary,
   locale,
-  hideRawScore,
   currentHumanAction,
   auditLogs,
-  isAnalyzingLive,
-  liveError,
-  onLocaleChange,
-  onToggleBlindScore,
-  onRunLiveGemini,
-  onSaveExperimentNote,
-  onCompleteMissingFields,
   onHumanDecision,
   onOpenPackageModal,
 }: TriageDetailWorkspaceProps) {
@@ -135,48 +106,27 @@ export function TriageDetailWorkspace({
   const [review, setReview] = useState<EvidenceReview>({});
   const [confirmed, setConfirmed] = useState(false);
   const [recorded, setRecorded] = useState(false);
-  const items = buildReviewEvidence(listing, skuRef, baselineEvaluation, locale, liveEvaluation);
+  const items = buildReviewEvidence(listing, skuRef, baselineEvaluation, locale);
 
   const [showThresholdRubric, setShowThresholdRubric] = useState(false);
+  const [showExample, setShowExample] = useState(false);
   const snapshot = createReportSnapshot(listing.id, items, review, locale);
   const draftText = snapshot.text;
   const [overrideNote, setOverrideNote] = useState('');
   const [decisionDriver, setDecisionDriver] = useState<DecisionDriver>(
     getDefaultDriverForEvaluation(activeEvaluation)
   );
-  const [sellerInput, setSellerInput] = useState(listing.sellerId ?? 'LojaSul_BR');
-  const [timestampInput, setTimestampInput] = useState(
-    listing.captureTimestamp ?? '2026-11-19T14:30:00Z'
-  );
-  const [tmInput, setTmInput] = useState<TrademarkStatus>(listing.trademarkStatus);
-  const [expIssueType, setExpIssueType] = useState<AiExperimentNote['issueType']>('NONE');
-  const [expNoteText, setExpNoteText] = useState('');
-
   useEffect(() => {
     setOverrideNote('');
     setConfirmed(false);
     setRecorded(false);
-    setDecisionDriver(getDefaultDriverForEvaluation(activeEvaluation));
-    setSellerInput(listing.sellerId ?? 'LojaSul_BR');
-    setTimestampInput(listing.captureTimestamp ?? '2026-11-19T14:30:00Z');
-    setTmInput(listing.trademarkStatus);
-    setExpIssueType('NONE');
-    setExpNoteText('');
-  }, [
-    listing.id,
-    locale,
-    activeEvaluation.draftTakedownSummary,
-    listing.sellerId,
-    listing.captureTimestamp,
-    listing.trademarkStatus,
-  ]);
+  }, [locale]);
 
   const bannerStyle = getClassificationBannerStyle(activeEvaluation.classification);
   const bannerLabel = getClassificationLabel(activeEvaluation.classification, locale);
   const driverOptions = getDecisionDriverOptions(locale);
 
   const productName = isKo ? skuRef.productNameKo : skuRef.productName;
-  const silhouetteNote = isKo ? skuRef.silhouetteNoteKo : skuRef.silhouetteNote;
   const officialCopy = isKo ? skuRef.officialCopyKo : skuRef.officialCopy;
   const countryName = isKo ? listing.targetCountryNameKo : listing.targetCountryName;
   const visualObs = isKo ? listing.visualObservationKo : listing.visualObservation;
@@ -201,7 +151,6 @@ export function TriageDetailWorkspace({
     );
   };
 
-  const caseExperimentNotes = experimentNotes.filter((n) => n.caseId === listing.id);
   const gates = getDecisionGates({ evaluation: activeEvaluation, items, review, confirmed, rationale: overrideNote, draft: draftText, caseId: listing.id, locale });
   const changeReview = (next: EvidenceReview) => { setReview(next); setConfirmed(false); setRecorded(false); };
   const decide = (action: Exclude<HumanActionType, 'PENDING'>) => {
@@ -212,104 +161,33 @@ export function TriageDetailWorkspace({
 
 
   return (
-    <div className="flex-1 min-w-0 space-y-5">
-      {/* Workspace Toolbar: Language Switch, Blind-Score Toggle, Live Gemini Button */}
-      <div className="border border-[#DFDBD2] bg-white px-4 py-3 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
-        <div className="flex flex-wrap items-center gap-4">
-          <div
-            role="group"
-            aria-label={isKo ? '인터페이스 언어 선택' : 'Interface language'}
-            className="inline-flex border border-[#CFCAC0] bg-[#F7F5F0] p-0.5"
-          >
-            <button
-              type="button"
-              onClick={() => onLocaleChange('ko')}
-              className={`px-3 py-1.5 text-xs font-medium whitespace-nowrap shrink-0 transition-colors ${
-                locale === 'ko'
-                  ? 'bg-[#161616] text-white'
-                  : 'text-[#5A5853] hover:text-[#161616]'
-              }`}
-            >
-              한국어
-            </button>
-            <button
-              type="button"
-              onClick={() => onLocaleChange('en')}
-              className={`px-3 py-1.5 text-xs font-medium whitespace-nowrap shrink-0 transition-colors ${
-                locale === 'en'
-                  ? 'bg-[#161616] text-white'
-                  : 'text-[#5A5853] hover:text-[#161616]'
-              }`}
-            >
-              English
-            </button>
-          </div>
-
-          <label
-            className="inline-flex items-center gap-2 text-xs text-[#161616] cursor-pointer"
-            title={t.blindModeHint}
-          >
-            <input
-              type="checkbox"
-              checked={hideRawScore}
-              onChange={(e) => onToggleBlindScore(e.target.checked)}
-              className="accent-[#E84A27]"
-            />
-            <EyeOff className="w-3.5 h-3.5 text-[#5A5853]" aria-hidden="true" />
-            <span>{t.blindModeLabel}</span>
-          </label>
-        </div>
-
-        <div className="flex items-center gap-2 shrink-0">
-          <button
-            type="button"
-            onClick={onRunLiveGemini}
-            disabled={isAnalyzingLive}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 text-xs font-medium border border-[#161616] bg-white text-[#161616] hover:bg-[#FAF8F5] disabled:opacity-50 whitespace-nowrap shrink-0"
-          >
-            <Sparkles className="w-3.5 h-3.5 text-[#E84A27]" aria-hidden="true" />
-            {isAnalyzingLive ? t.runningLiveGemini : t.runLiveGemini}
-          </button>
-        </div>
-      </div>
-
-      {liveError && (
-        <div
-          role="alert"
-          className="border border-[#B91C1C] bg-[#FEF2F2] px-4 py-3 text-xs text-[#991B1B]"
-        >
-          <span className="font-semibold">{t.liveGeminiErrorPrefix}</span> {liveError}
-        </div>
-      )}
-
-      <p className="text-xs text-[#5A5853]">{et.flow}</p>
-      {/* Primary Triage & Evidence Comparison Card */}
+    <div className="w-full flex-1 min-w-0 space-y-5">
       <article className="border border-[#DFDBD2] bg-white">
         {/* Card Header: Unboxed Metadata & Classification Verdict */}
         <div className="px-6 py-4 border-b border-[#DFDBD2]">
-          <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-[#5A5853] mb-3">
-            <div className="flex flex-wrap items-center gap-2 font-mono tabular-nums">
-              <span className="font-semibold text-[#161616]">{listing.id}</span>
-              <span aria-hidden="true">·</span>
-              <span>{listing.marketplace}</span>
-              <span aria-hidden="true">·</span>
-              <span>
-                {countryName} ({listing.targetCountryCode})
-              </span>
-              <span aria-hidden="true">·</span>
-              <span>
-                {t.capturedLabel} {listing.captureTimestamp ?? t.missingUpper}
-              </span>
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
+            <div className="min-w-0">
+              <p className="text-xs text-[#5A5853]">
+                <span className="font-mono font-semibold">{listing.id}</span> · {countryName} · {listing.marketplace}
+              </p>
+              <h2 className="mt-1 text-lg font-bold">{productName}</h2>
             </div>
-            <span className="text-xs font-medium text-[#5A5853]">
-              {t.sourceLabel}:{' '}
-              {activeEvaluation.analysisSource === 'Live Gemini (gemini-4-hydrogen)'
-                ? t.sourceLiveGemini
-                : t.sourceBaseline}
-            </span>
+            <button
+              type="button"
+              onClick={() => setShowExample(visible => !visible)}
+              aria-expanded={showExample}
+              aria-controls="prepared-ai-result"
+              className="inline-flex min-h-9 items-center gap-2 rounded-md bg-[#182d2e] px-3 py-2 text-xs font-semibold text-white hover:bg-[#294746]"
+            >
+              <Sparkles className="size-3.5" aria-hidden="true" />
+              {showExample
+                ? (isKo ? '예시 AI 결과 접기' : 'Hide sample AI result')
+                : (isKo ? '예시 AI 결과 보기' : 'Show sample AI result')}
+            </button>
           </div>
 
-          <div className={`border px-4 py-3 ${bannerStyle.containerClass}`}>
+          <div className={`peer-feedback-region border px-4 py-3 ${bannerStyle.containerClass}`}>
+            <FeedbackHighlight topic="risk" locale={locale} />
             <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
               <div className="flex items-center gap-2">
                 {activeEvaluation.isApprovalLocked && (
@@ -335,6 +213,10 @@ export function TriageDetailWorkspace({
               </button>
             </div>
 
+            <p className="mt-1 text-xs text-[#44423D]">
+              {et.aiRecommendation} · <strong>{getRecommendationLabel(activeEvaluation.recommendedAction, locale)}</strong>
+            </p>
+
             {showThresholdRubric && (
               <p className="mt-2 pt-2 border-t border-black/10 text-xs text-[#161616] leading-relaxed">
                 {activeEvaluation.thresholdExplanation}
@@ -342,219 +224,58 @@ export function TriageDetailWorkspace({
             )}
           </div>
 
-          {/* Legitimate Resale / First-Sale Context Indicator */}
-          {activeEvaluation.isLegitimateResaleContext && (
-            <div
-              data-testid="resale-context-indicator"
-              className="mt-3 border border-[#15803D] bg-[#F0FDF4] px-4 py-2.5 flex items-start gap-2.5"
-            >
-              <CheckCircle2 className="w-4 h-4 text-[#15803D] shrink-0 mt-0.5" aria-hidden="true" />
-              <div className="text-xs text-[#166534] leading-relaxed">
-                <span className="font-semibold">{t.resaleBadgeTitle}</span>{' '}
-                {t.resaleBadgeBody} ({activeEvaluation.resaleSignals.join(', ')})
-              </div>
+          <dl className="mt-3 grid grid-cols-2 gap-3 rounded-md bg-[#F7F5F0] px-3 py-2.5 sm:grid-cols-3">
+            <div>
+              <dt className="text-[11px] text-[#5A5853]">{isKo ? '판매가 / 기준가' : 'Listing / reference price'}</dt>
+              <dd className="mt-0.5 text-sm font-semibold tabular-nums">
+                {listing.currency}{listing.listedPrice} / {listing.currency}{listing.officialMsrp}
+              </dd>
             </div>
-          )}
-
-          {/* Mandatory Data-Curation Audit Lock */}
-          {!activeEvaluation.mandatoryAudit.valid && (
-            <div
-              data-testid="missing-evidence-warning"
-              className="mt-3 border border-[#B91C1C] bg-[#FFF5F5] p-4"
-            >
-              <div className="flex items-start gap-2.5">
-                <AlertTriangle className="w-4 h-4 text-[#B91C1C] shrink-0 mt-0.5" aria-hidden="true" />
-                <div className="flex-1 text-xs text-[#991B1B]">
-                  <p className="font-semibold">{t.lockBannerTitle}</p>
-                  <ul className="mt-1 list-disc list-inside space-y-0.5">
-                    {activeEvaluation.mandatoryAudit.reasons.map((reason, idx) => (
-                      <li key={idx}>{reason}</li>
-                    ))}
-                  </ul>
-                </div>
-              </div>
-
-              <div className="mt-3 pt-3 border-t border-[#FECACA] grid grid-cols-1 sm:grid-cols-4 gap-2 items-end">
-                <div>
-                  <label htmlFor="fix-seller-id" className="block text-[11px] font-medium text-[#161616] mb-1">
-                    {t.fixSellerLabel}
-                  </label>
-                  <input
-                    id="fix-seller-id"
-                    type="text"
-                    value={sellerInput}
-                    onChange={(e) => setSellerInput(e.target.value)}
-                    className="w-full border border-[#CFCAC0] bg-white px-2.5 py-1.5 text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="fix-timestamp" className="block text-[11px] font-medium text-[#161616] mb-1">
-                    {t.fixTimestampLabel}
-                  </label>
-                  <input
-                    id="fix-timestamp"
-                    type="text"
-                    value={timestampInput}
-                    onChange={(e) => setTimestampInput(e.target.value)}
-                    className="w-full border border-[#CFCAC0] bg-white px-2.5 py-1.5 text-xs font-mono"
-                  />
-                </div>
-                <div>
-                  <label htmlFor="fix-trademark" className="block text-[11px] font-medium text-[#161616] mb-1">
-                    {listing.targetCountryCode} {t.fixTrademarkLabel}
-                  </label>
-                  <select
-                    id="fix-trademark"
-                    value={tmInput}
-                    onChange={(e) => setTmInput(e.target.value as TrademarkStatus)}
-                    className="w-full border border-[#CFCAC0] bg-white px-2.5 py-1.5 text-xs"
-                  >
-                    <option value="Pending">Pending</option>
-                    <option value="Active">Active</option>
-                    <option value="Unregistered">Unregistered</option>
-                  </select>
-                </div>
-                <button
-                  type="button"
-                  onClick={() =>
-                    onCompleteMissingFields({
-                      sellerId: sellerInput.trim(),
-                      captureTimestamp: timestampInput.trim(),
-                      trademarkStatus: tmInput,
-                    })
-                  }
-                  className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-medium bg-[#161616] text-white hover:bg-[#333333] whitespace-nowrap shrink-0"
-                >
-                  <Unlock className="w-3.5 h-3.5" aria-hidden="true" />
-                  {t.fixSubmitBtn}
-                </button>
-              </div>
+            <div>
+              <dt className="text-[11px] text-[#5A5853]">{isKo ? '레플리카 문구' : 'Replica wording'}</dt>
+              <dd className="mt-0.5 break-words text-sm font-semibold">
+                {activeEvaluation.suspiciousKeywords[0] ?? (isKo ? '표시된 문구 없음' : 'None flagged')}
+              </dd>
             </div>
-          )}
+            <div>
+              <dt className="text-[11px] text-[#5A5853]">{isKo ? '시뮬레이션 유사도' : 'Simulated similarity'}</dt>
+              <dd className="mt-0.5 font-mono text-sm font-semibold">{listing.visualSimilarityScore.toFixed(2)}</dd>
+            </div>
+          </dl>
 
-          {/* Explainable AI Rationale */}
-          <div className="mt-4">
-            <h3 className="text-xs font-semibold text-[#5A5853] mb-2">
-              {t.rationaleHeading}
-            </h3>
-            <ul className="space-y-1.5 text-sm text-[#161616]">
-              {activeEvaluation.rationaleBullets.map((bullet, idx) => (
-                <li key={idx} className="flex items-start gap-2 leading-relaxed">
-                  <span className="text-[#E84A27] font-mono text-xs mt-1" aria-hidden="true">
-                    0{idx + 1}
-                  </span>
-                  <span>{bullet}</span>
-                </li>
-              ))}
-            </ul>
+          <div id="prepared-ai-result" hidden={!showExample} data-testid="prepared-ai-result"
+            className="mt-3 rounded-md border border-[#C5D7D0] bg-[#F0F6F3] px-4 py-3">
+            <h3 className="text-xs font-semibold text-[#245247]">{isKo ? '사전 작성된 예시 AI 결과' : 'Prepared sample AI result'}</h3>
+            <p className="mt-1 text-sm leading-relaxed">{exampleSummary}</p>
           </div>
+
+          {activeEvaluation.isLegitimateResaleContext && (
+            <p data-testid="resale-context-indicator" className="mt-3 flex items-start gap-2 text-xs text-[#166534]">
+              <CheckCircle2 className="size-4 shrink-0" aria-hidden="true" />
+              {isKo ? '정상 중고 재판매 단서 · 판매자 미등록은 참고 정보' : 'Lawful resale cues · Unlisted seller status is contextual'}
+            </p>
+          )}
+
+          {!activeEvaluation.mandatoryAudit.valid && (
+            <div data-testid="missing-evidence-warning" className="mt-3 flex items-start gap-2 rounded-md border border-[#FECACA] bg-[#FFF5F5] px-4 py-3 text-xs text-[#991B1B]">
+              <AlertTriangle className="size-4 shrink-0" aria-hidden="true" />
+              <div>
+                <p className="font-semibold">{t.lockBannerTitle}</p>
+                <ul className="mt-1 list-disc list-inside">
+                  {activeEvaluation.mandatoryAudit.reasons.map(reason => <li key={reason}>{reason}</li>)}
+                </ul>
+              </div>
+            </div>
+          )}
         </div>
 
-        {/* Part 5: Baseline vs. Live Gemini Side-by-Side Diff (when Live Gemini has been run) */}
-        {liveEvaluation && (
-          <div
-            data-testid="gemini-comparison-panel"
-            className="px-6 py-4 border-b border-[#DFDBD2] bg-[#FAF6F2]"
-          >
-            <div className="mb-3">
-              <h3 className="text-xs font-semibold text-[#161616]">
-                {t.sectionExperimentHeading}
-              </h3>
-              <p className="text-xs text-[#5A5853] mt-0.5">{t.experimentCompareSubtitle} {et.untrusted}. {isKo ? '분류·초안·승인에는 적용되지 않습니다.' : 'Does not control classification, draft or approval.'}</p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-3">
-              <div className="border border-[#DFDBD2] bg-white p-3">
-                <div className="flex items-center justify-between text-xs mb-2">
-                  <span className="font-semibold text-[#161616]">{t.experimentColBaseline}</span>
-                  <span className="font-mono text-[#5A5853]">
-                    {getShortRiskLabel(baselineEvaluation.classification, locale)}
-                  </span>
-                </div>
-                <ul className="space-y-1 text-xs text-[#44423D] list-disc list-inside">
-                  {baselineEvaluation.rationaleBullets.map((b, i) => (
-                    <li key={i}>{b}</li>
-                  ))}
-                </ul>
-              </div>
-
-              <div className="border border-[#E84A27] bg-white p-3">
-                <div className="flex items-center justify-between text-xs mb-2">
-                  <span className="font-semibold text-[#161616]">{t.experimentColGemini}</span>
-                  <span className="font-mono font-semibold text-[#E84A27]">
-                    {getShortRiskLabel(liveEvaluation.classification, locale)}
-                  </span>
-                </div>
-                <ul className="space-y-1 text-xs text-[#44423D] list-disc list-inside">
-                  {liveEvaluation.rationaleBullets.map((b, i) => (
-                    <li key={i}>{b}</li>
-                  ))}
-                </ul>
-              </div>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-12 gap-2 items-end">
-              <div className="sm:col-span-3">
-                <label htmlFor="exp-issue-type" className="block text-[11px] font-medium text-[#161616] mb-1">
-                  {t.experimentIssueLabel}
-                </label>
-                <select
-                  id="exp-issue-type"
-                  value={expIssueType}
-                  onChange={(e) => setExpIssueType(e.target.value as AiExperimentNote['issueType'])}
-                  className="w-full border border-[#CFCAC0] bg-white px-2.5 py-1.5 text-xs"
-                >
-                  <option value="NONE">{isKo ? '정상/일치' : 'Consistent'}</option>
-                  <option value="INCORRECT">{isKo ? '오판 (Incorrect)' : 'Incorrect'}</option>
-                  <option value="UNCLEAR">{isKo ? '모호함 (Unclear)' : 'Unclear'}</option>
-                  <option value="UNSUPPORTED">{isKo ? '근거 부족 (Unsupported)' : 'Unsupported'}</option>
-                  <option value="INCONSISTENT">{isKo ? '일관성 부족 (Inconsistent)' : 'Inconsistent'}</option>
-                </select>
-              </div>
-              <div className="sm:col-span-7">
-                <input
-                  type="text"
-                  aria-label={t.experimentIssueLabel}
-                  value={expNoteText}
-                  onChange={(e) => setExpNoteText(e.target.value)}
-                  placeholder={t.experimentNotePlaceholder}
-                  className="w-full border border-[#CFCAC0] bg-white px-2.5 py-1.5 text-xs"
-                />
-              </div>
-              <div className="sm:col-span-2">
-                <button
-                  type="button"
-                  onClick={() => {
-                    if (!expNoteText.trim()) return;
-                    onSaveExperimentNote(expIssueType, expNoteText.trim());
-                    setExpNoteText('');
-                  }}
-                  className="w-full px-3 py-1.5 text-xs font-medium bg-[#161616] text-white hover:bg-[#333333] whitespace-nowrap"
-                >
-                  {t.experimentSaveBtn}
-                </button>
-              </div>
-            </div>
-
-            {caseExperimentNotes.length > 0 && (
-              <ul className="mt-2 space-y-1 text-xs text-[#44423D]">
-                {caseExperimentNotes.map((item, idx) => (
-                  <li key={idx} className="font-mono">
-                    [{item.issueType}] {item.note} ({item.timestamp})
-                  </li>
-                ))}
-              </ul>
-            )}
-          </div>
-        )}
-
         {/* Visual Comparison Section */}
-        <div className="px-6 py-4 border-b border-[#DFDBD2]">
+        <div className="peer-feedback-region px-6 py-4 border-b border-[#DFDBD2]">
+          <FeedbackHighlight topic="visual" locale={locale} />
           <div className="flex flex-wrap items-center justify-between gap-2 mb-2.5">
             <h3 className="text-xs font-semibold text-[#5A5853]">
               {t.sectionVisualHeading}
             </h3>
-            <span className="text-xs text-[#5A5853]">{silhouetteNote}</span>
           </div>
           <ProductVisualComparison
             sku={skuRef.sku}
@@ -563,7 +284,7 @@ export function TriageDetailWorkspace({
             similarityScore={listing.visualSimilarityScore}
             observation={visualObs}
             locale={locale}
-            hideRawScore={hideRawScore}
+            hideRawScore={false}
           />
         </div>
 
@@ -720,7 +441,8 @@ export function TriageDetailWorkspace({
         <EvidenceReviewPanel items={items} review={review} locale={locale} onChange={changeReview} />
 
         {/* Draft Takedown Report & Human Decision Controls */}
-        <div className="px-6 py-4 space-y-4">
+        <div className="peer-feedback-region px-6 py-4 space-y-4">
+          <FeedbackHighlight topic="draft" locale={locale} />
           <div className="flex items-center justify-between">
             <label
               htmlFor="draft-takedown-textarea"
@@ -739,20 +461,24 @@ export function TriageDetailWorkspace({
             )}
           </div>
 
+          <ul className="flex flex-wrap gap-2 text-xs" aria-label={isKo ? '초안에 포함된 근거' : 'Evidence in draft'}>
+            {snapshot.selectedEvidenceIds.length > 0
+              ? items.filter(item => snapshot.selectedEvidenceIds.includes(item.id)).map(item => (
+                <li key={item.id} className="rounded-full bg-[#E9F3EF] px-2.5 py-1 font-medium text-[#245247]">{item.name}</li>
+              ))
+              : <li className="text-[#5A5853]">{et.noSelection}</li>}
+          </ul>
           <textarea
             id="draft-takedown-textarea"
-            rows={14}
+            rows={8}
             value={draftText}
             readOnly
             data-testid="report-draft"
             className="w-full border border-[#CFCAC0] bg-white px-3 py-2.5 text-sm text-[#161616] leading-relaxed disabled:bg-[#F3F1EC] disabled:text-[#5A5853]"
           />
 
-          <p className="text-xs text-[#92400E]" data-testid="unresolved-uncertainties">{et.unresolved}</p>
-          <p className="text-xs text-[#5A5853]">{activeEvaluation.lockReason}</p>
           <label className="flex items-start gap-2 text-xs"><input type="checkbox" data-testid="confirm-evidence" checked={confirmed} onChange={e => { setConfirmed(e.target.checked); setRecorded(false); }} />{et.confirmation}</label>
-          <p className="text-xs text-[#5A5853]">{et.gates}</p>
-          <p className="text-xs">{et.aiRecommendation}: {getRecommendationLabel(activeEvaluation.recommendedAction, locale)}</p>
+          {!gates.canRecord && <p className="text-xs text-[#5A5853]">{et.gates}</p>}
           {recorded && <p role="status" className="text-xs text-[#166534]">{et.saved}</p>}
           <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end pt-2 border-t border-[#EAE6DD]">
             <div className="md:col-span-3">
@@ -830,8 +556,8 @@ export function TriageDetailWorkspace({
             </div>
           </div>
 
-          <p className="text-[11px] text-[#5A5853]">
-            {t.transparencyPrefix} {activeEvaluation.caveats.join(' ')}
+          <p className="text-xs text-[#5A5853]">
+            {isKo ? '신고 승인 잠금 · 독립적으로 확인한 권리·진위 자료가 필요합니다.' : 'Report approval is locked pending independent evidence of rights and authenticity.'}
           </p>
         </div>
       </article>

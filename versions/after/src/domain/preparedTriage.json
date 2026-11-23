@@ -1,0 +1,620 @@
+{
+  "AJOU-SYN-001": {
+    "ko": {
+      "classification": "HIGH_RISK",
+      "recommendedAction": "HOLD_VERIFICATION",
+      "priceDeviationPct": -84,
+      "suspiciousKeywords": [
+        "réplica 1:1",
+        "réplica",
+        "aaa",
+        "estilo ajou"
+      ],
+      "resaleSignals": [],
+      "isLegitimateResaleContext": false,
+      "mandatoryAudit": {
+        "valid": true,
+        "missingFields": [],
+        "reasons": []
+      },
+      "isApprovalLocked": true,
+      "lockReason": "독립적으로 검증된 증거가 없습니다. 합성 자료의 검토 완료는 실제 신고 승인을 해제하지 않습니다.",
+      "rationaleBullets": [
+        "예시 신호 3/3: 문구 있음, New 가격 편차 해당 (-84%), 시뮬레이션 유사도 낮음 (0.42).",
+        "합성 판매자 상태 Unlisted. 정품 리셀·병행수입 가능성은 별도 검토해야 합니다.",
+        "필수 메타데이터 완비. 합성 Active 권리 기록은 독립적으로 인증된 권리가 아닙니다."
+      ],
+      "thresholdExplanation": "예시 기준: 필수 메타데이터 누락 시 HOLD. 다음으로 화이트리스트 판매자는 LOW. 그 외 리셀 단서 + 레플리카 문구 없음 + 시뮬레이션 유사도 >= 0.80이면 LOW. 그 외 HIGH는 2개 이상 신호가 필요합니다: 레플리카 문구, New 상태에서 반올림 가격 편차 <= -60%, 시뮬레이션 유사도 < 0.65. 나머지는 MEDIUM. 미등록 상태 자체는 고위험 신호가 아닙니다. 실제 정확도 검증 없음.",
+      "evidenceChecks": [
+        {
+          "label": "시뮬레이션 시각 유사도",
+          "status": "WARN",
+          "detail": "0.42",
+          "originTag": "External",
+          "curationLimitation": "예시 SVG 그림과 수동 점수입니다. 실제 CV 측정·진위 확률이 아닙니다."
+        },
+        {
+          "label": "리스팅 문구",
+          "status": "WARN",
+          "detail": "réplica 1:1, réplica, aaa, estilo ajou",
+          "originTag": "External",
+          "curationLimitation": "합성 현지어 텍스트, 번역 검토 필요"
+        },
+        {
+          "label": "가격 편차",
+          "status": "WARN",
+          "detail": "-84%",
+          "originTag": "Internal",
+          "curationLimitation": "합성 MSRP이며 할인·중고 맥락 검토 필요"
+        },
+        {
+          "label": "판매자·권리 메타데이터",
+          "status": "WARN",
+          "detail": "Unlisted",
+          "originTag": "Internal",
+          "curationLimitation": "가상 권리·판매자 기록, 독립 인증 없음"
+        }
+      ],
+      "draftTakedownSummary": "검증 요청 초안 · AJOU-SYN-001\n\n1. 관찰 사실, 합성 자료\n\n선택된 항목 없음.\n\n2. 의심 지표, 진위 결론 아님\n\n선택된 항목 없음.\n\n3. 미검증 가정\n\n선택된 자료는 합성 또는 시뮬레이션입니다. 진위, 권리 유효성, 리셀 적법성은 확인되지 않았습니다.\n\n4. 요청하는 사람의 검증\n\n5. 제안하는 다음 단계\n\n독립 자료를 수집하고 권리·리셀 맥락을 검토하세요. 현재 초안은 조사용이며 삭제 요청이나 위법성 판단이 아닙니다.",
+      "analysisSource": "Deterministic Baseline",
+      "caveats": [
+        "합성 데이터와 시뮬레이션 CV입니다. 실제 정확도는 검증되지 않았습니다.",
+        "고위험 분류는 침해 결론이나 삭제 권고가 아닙니다."
+      ]
+    },
+    "en": {
+      "classification": "HIGH_RISK",
+      "recommendedAction": "HOLD_VERIFICATION",
+      "priceDeviationPct": -84,
+      "suspiciousKeywords": [
+        "réplica 1:1",
+        "réplica",
+        "aaa",
+        "estilo ajou"
+      ],
+      "resaleSignals": [],
+      "isLegitimateResaleContext": false,
+      "mandatoryAudit": {
+        "valid": true,
+        "missingFields": [],
+        "reasons": []
+      },
+      "isApprovalLocked": true,
+      "lockReason": "No independently verified evidence. Reviewing synthetic data does not unlock takedown approval.",
+      "rationaleBullets": [
+        "Illustrative signals 3/3: wording flagged, New price threshold met (-84%), simulated similarity low (0.42).",
+        "Synthetic seller status Unlisted. Lawful resale and parallel imports require separate review.",
+        "Mandatory metadata complete. A synthetic Active rights record is not independently authenticated."
+      ],
+      "thresholdExplanation": "Illustrative baseline: missing mandatory metadata gives HOLD. Next, a whitelisted seller gives LOW. Otherwise resale cues + no replica wording + simulated similarity >= 0.80 gives LOW. Otherwise HIGH requires >= 2 signals: replica wording, New condition with rounded price deviation <= -60%, simulated similarity < 0.65. All other cases give MEDIUM. Unlisted status alone is not a high-risk signal. No validated real-world accuracy.",
+      "evidenceChecks": [
+        {
+          "label": "Simulated visual similarity",
+          "status": "WARN",
+          "detail": "0.42",
+          "originTag": "External",
+          "curationLimitation": "Illustrative SVGs and assigned score. Not measured CV or an authenticity probability."
+        },
+        {
+          "label": "Listing wording",
+          "status": "WARN",
+          "detail": "réplica 1:1, réplica, aaa, estilo ajou",
+          "originTag": "External",
+          "curationLimitation": "Synthetic local-language text; translation review required"
+        },
+        {
+          "label": "Price deviation",
+          "status": "WARN",
+          "detail": "-84%",
+          "originTag": "Internal",
+          "curationLimitation": "Synthetic MSRP; review discounts and resale context"
+        },
+        {
+          "label": "Seller and rights metadata",
+          "status": "WARN",
+          "detail": "Unlisted",
+          "originTag": "Internal",
+          "curationLimitation": "Fictional rights and seller records; no independent authentication"
+        }
+      ],
+      "draftTakedownSummary": "Verification request draft · AJOU-SYN-001\n\n1. Observed facts, synthetic data\n\nNo selected items.\n\n2. Suspicious indicators, no authenticity conclusion\n\nNo selected items.\n\n3. Unverified assumptions\n\nSelected inputs are synthetic or simulated. Authenticity, enforceable rights and lawful resale status are not established.\n\n4. Requested human verification\n\n5. Proposed next steps\n\nCollect independent evidence and review rights and resale context. This draft supports investigation and does not request removal or establish infringement.",
+      "analysisSource": "Deterministic Baseline",
+      "caveats": [
+        "Synthetic data and simulated CV. Real-world accuracy is unvalidated.",
+        "High risk is not an infringement conclusion or a removal recommendation."
+      ]
+    }
+  },
+  "AJOU-SYN-002": {
+    "ko": {
+      "classification": "LOW_RISK",
+      "recommendedAction": "DISMISSED_LEGITIMATE",
+      "priceDeviationPct": -50,
+      "suspiciousKeywords": [],
+      "resaleSignals": [
+        "Condition: Pre-owned",
+        "pre-owned",
+        "used",
+        "corner wear",
+        "receipt"
+      ],
+      "isLegitimateResaleContext": true,
+      "mandatoryAudit": {
+        "valid": true,
+        "missingFields": [],
+        "reasons": []
+      },
+      "isApprovalLocked": true,
+      "lockReason": "독립적으로 검증된 증거가 없습니다. 합성 자료의 검토 완료는 실제 신고 승인을 해제하지 않습니다.",
+      "rationaleBullets": [
+        "예시 신호 0/3: 문구 없음, New 가격 편차 미해당 (-50%), 시뮬레이션 유사도 기준 이상 (0.91).",
+        "최초판매·중고 리셀 단서가 있습니다. 미등록 판매자라는 이유만으로 침해로 분류하지 않습니다.",
+        "필수 메타데이터 완비. 합성 Active 권리 기록은 독립적으로 인증된 권리가 아닙니다."
+      ],
+      "thresholdExplanation": "예시 기준: 필수 메타데이터 누락 시 HOLD. 다음으로 화이트리스트 판매자는 LOW. 그 외 리셀 단서 + 레플리카 문구 없음 + 시뮬레이션 유사도 >= 0.80이면 LOW. 그 외 HIGH는 2개 이상 신호가 필요합니다: 레플리카 문구, New 상태에서 반올림 가격 편차 <= -60%, 시뮬레이션 유사도 < 0.65. 나머지는 MEDIUM. 미등록 상태 자체는 고위험 신호가 아닙니다. 실제 정확도 검증 없음.",
+      "evidenceChecks": [
+        {
+          "label": "시뮬레이션 시각 유사도",
+          "status": "PASS",
+          "detail": "0.91",
+          "originTag": "External",
+          "curationLimitation": "예시 SVG 그림과 수동 점수입니다. 실제 CV 측정·진위 확률이 아닙니다."
+        },
+        {
+          "label": "리스팅 문구",
+          "status": "PASS",
+          "detail": "",
+          "originTag": "External",
+          "curationLimitation": "합성 현지어 텍스트, 번역 검토 필요"
+        },
+        {
+          "label": "가격 편차",
+          "status": "PASS",
+          "detail": "-50%",
+          "originTag": "Internal",
+          "curationLimitation": "합성 MSRP이며 할인·중고 맥락 검토 필요"
+        },
+        {
+          "label": "판매자·권리 메타데이터",
+          "status": "WARN",
+          "detail": "Unlisted",
+          "originTag": "Internal",
+          "curationLimitation": "가상 권리·판매자 기록, 독립 인증 없음"
+        }
+      ],
+      "draftTakedownSummary": "검증 요청 초안 · AJOU-SYN-002\n\n1. 관찰 사실, 합성 자료\n\n선택된 항목 없음.\n\n2. 의심 지표, 진위 결론 아님\n\n선택된 항목 없음.\n\n3. 미검증 가정\n\n선택된 자료는 합성 또는 시뮬레이션입니다. 진위, 권리 유효성, 리셀 적법성은 확인되지 않았습니다.\n\n4. 요청하는 사람의 검증\n\n5. 제안하는 다음 단계\n\n독립 자료를 수집하고 권리·리셀 맥락을 검토하세요. 현재 초안은 조사용이며 삭제 요청이나 위법성 판단이 아닙니다.",
+      "analysisSource": "Deterministic Baseline",
+      "caveats": [
+        "합성 데이터와 시뮬레이션 CV입니다. 실제 정확도는 검증되지 않았습니다.",
+        "고위험 분류는 침해 결론이나 삭제 권고가 아닙니다."
+      ]
+    },
+    "en": {
+      "classification": "LOW_RISK",
+      "recommendedAction": "DISMISSED_LEGITIMATE",
+      "priceDeviationPct": -50,
+      "suspiciousKeywords": [],
+      "resaleSignals": [
+        "Condition: Pre-owned",
+        "pre-owned",
+        "used",
+        "corner wear",
+        "receipt"
+      ],
+      "isLegitimateResaleContext": true,
+      "mandatoryAudit": {
+        "valid": true,
+        "missingFields": [],
+        "reasons": []
+      },
+      "isApprovalLocked": true,
+      "lockReason": "No independently verified evidence. Reviewing synthetic data does not unlock takedown approval.",
+      "rationaleBullets": [
+        "Illustrative signals 0/3: wording not flagged, New price threshold not met (-50%), simulated similarity above cutoff (0.91).",
+        "First-sale / resale cues are present. Unlisted status alone does not indicate infringement.",
+        "Mandatory metadata complete. A synthetic Active rights record is not independently authenticated."
+      ],
+      "thresholdExplanation": "Illustrative baseline: missing mandatory metadata gives HOLD. Next, a whitelisted seller gives LOW. Otherwise resale cues + no replica wording + simulated similarity >= 0.80 gives LOW. Otherwise HIGH requires >= 2 signals: replica wording, New condition with rounded price deviation <= -60%, simulated similarity < 0.65. All other cases give MEDIUM. Unlisted status alone is not a high-risk signal. No validated real-world accuracy.",
+      "evidenceChecks": [
+        {
+          "label": "Simulated visual similarity",
+          "status": "PASS",
+          "detail": "0.91",
+          "originTag": "External",
+          "curationLimitation": "Illustrative SVGs and assigned score. Not measured CV or an authenticity probability."
+        },
+        {
+          "label": "Listing wording",
+          "status": "PASS",
+          "detail": "",
+          "originTag": "External",
+          "curationLimitation": "Synthetic local-language text; translation review required"
+        },
+        {
+          "label": "Price deviation",
+          "status": "PASS",
+          "detail": "-50%",
+          "originTag": "Internal",
+          "curationLimitation": "Synthetic MSRP; review discounts and resale context"
+        },
+        {
+          "label": "Seller and rights metadata",
+          "status": "WARN",
+          "detail": "Unlisted",
+          "originTag": "Internal",
+          "curationLimitation": "Fictional rights and seller records; no independent authentication"
+        }
+      ],
+      "draftTakedownSummary": "Verification request draft · AJOU-SYN-002\n\n1. Observed facts, synthetic data\n\nNo selected items.\n\n2. Suspicious indicators, no authenticity conclusion\n\nNo selected items.\n\n3. Unverified assumptions\n\nSelected inputs are synthetic or simulated. Authenticity, enforceable rights and lawful resale status are not established.\n\n4. Requested human verification\n\n5. Proposed next steps\n\nCollect independent evidence and review rights and resale context. This draft supports investigation and does not request removal or establish infringement.",
+      "analysisSource": "Deterministic Baseline",
+      "caveats": [
+        "Synthetic data and simulated CV. Real-world accuracy is unvalidated.",
+        "High risk is not an infringement conclusion or a removal recommendation."
+      ]
+    }
+  },
+  "AJOU-SYN-003": {
+    "ko": {
+      "classification": "LOW_RISK",
+      "recommendedAction": "DISMISSED_LEGITIMATE",
+      "priceDeviationPct": -2,
+      "suspiciousKeywords": [],
+      "resaleSignals": [],
+      "isLegitimateResaleContext": false,
+      "mandatoryAudit": {
+        "valid": true,
+        "missingFields": [],
+        "reasons": []
+      },
+      "isApprovalLocked": true,
+      "lockReason": "독립적으로 검증된 증거가 없습니다. 합성 자료의 검토 완료는 실제 신고 승인을 해제하지 않습니다.",
+      "rationaleBullets": [
+        "예시 신호 0/3: 문구 없음, New 가격 편차 미해당 (-2%), 시뮬레이션 유사도 기준 이상 (0.96).",
+        "합성 판매자 상태 Whitelisted. 정품 리셀·병행수입 가능성은 별도 검토해야 합니다.",
+        "필수 메타데이터 완비. 합성 Active 권리 기록은 독립적으로 인증된 권리가 아닙니다."
+      ],
+      "thresholdExplanation": "예시 기준: 필수 메타데이터 누락 시 HOLD. 다음으로 화이트리스트 판매자는 LOW. 그 외 리셀 단서 + 레플리카 문구 없음 + 시뮬레이션 유사도 >= 0.80이면 LOW. 그 외 HIGH는 2개 이상 신호가 필요합니다: 레플리카 문구, New 상태에서 반올림 가격 편차 <= -60%, 시뮬레이션 유사도 < 0.65. 나머지는 MEDIUM. 미등록 상태 자체는 고위험 신호가 아닙니다. 실제 정확도 검증 없음.",
+      "evidenceChecks": [
+        {
+          "label": "시뮬레이션 시각 유사도",
+          "status": "PASS",
+          "detail": "0.96",
+          "originTag": "External",
+          "curationLimitation": "예시 SVG 그림과 수동 점수입니다. 실제 CV 측정·진위 확률이 아닙니다."
+        },
+        {
+          "label": "리스팅 문구",
+          "status": "PASS",
+          "detail": "",
+          "originTag": "External",
+          "curationLimitation": "합성 현지어 텍스트, 번역 검토 필요"
+        },
+        {
+          "label": "가격 편차",
+          "status": "PASS",
+          "detail": "-2%",
+          "originTag": "Internal",
+          "curationLimitation": "합성 MSRP이며 할인·중고 맥락 검토 필요"
+        },
+        {
+          "label": "판매자·권리 메타데이터",
+          "status": "WARN",
+          "detail": "Whitelisted",
+          "originTag": "Internal",
+          "curationLimitation": "가상 권리·판매자 기록, 독립 인증 없음"
+        }
+      ],
+      "draftTakedownSummary": "검증 요청 초안 · AJOU-SYN-003\n\n1. 관찰 사실, 합성 자료\n\n선택된 항목 없음.\n\n2. 의심 지표, 진위 결론 아님\n\n선택된 항목 없음.\n\n3. 미검증 가정\n\n선택된 자료는 합성 또는 시뮬레이션입니다. 진위, 권리 유효성, 리셀 적법성은 확인되지 않았습니다.\n\n4. 요청하는 사람의 검증\n\n5. 제안하는 다음 단계\n\n독립 자료를 수집하고 권리·리셀 맥락을 검토하세요. 현재 초안은 조사용이며 삭제 요청이나 위법성 판단이 아닙니다.",
+      "analysisSource": "Deterministic Baseline",
+      "caveats": [
+        "합성 데이터와 시뮬레이션 CV입니다. 실제 정확도는 검증되지 않았습니다.",
+        "고위험 분류는 침해 결론이나 삭제 권고가 아닙니다."
+      ]
+    },
+    "en": {
+      "classification": "LOW_RISK",
+      "recommendedAction": "DISMISSED_LEGITIMATE",
+      "priceDeviationPct": -2,
+      "suspiciousKeywords": [],
+      "resaleSignals": [],
+      "isLegitimateResaleContext": false,
+      "mandatoryAudit": {
+        "valid": true,
+        "missingFields": [],
+        "reasons": []
+      },
+      "isApprovalLocked": true,
+      "lockReason": "No independently verified evidence. Reviewing synthetic data does not unlock takedown approval.",
+      "rationaleBullets": [
+        "Illustrative signals 0/3: wording not flagged, New price threshold not met (-2%), simulated similarity above cutoff (0.96).",
+        "Synthetic seller status Whitelisted. Lawful resale and parallel imports require separate review.",
+        "Mandatory metadata complete. A synthetic Active rights record is not independently authenticated."
+      ],
+      "thresholdExplanation": "Illustrative baseline: missing mandatory metadata gives HOLD. Next, a whitelisted seller gives LOW. Otherwise resale cues + no replica wording + simulated similarity >= 0.80 gives LOW. Otherwise HIGH requires >= 2 signals: replica wording, New condition with rounded price deviation <= -60%, simulated similarity < 0.65. All other cases give MEDIUM. Unlisted status alone is not a high-risk signal. No validated real-world accuracy.",
+      "evidenceChecks": [
+        {
+          "label": "Simulated visual similarity",
+          "status": "PASS",
+          "detail": "0.96",
+          "originTag": "External",
+          "curationLimitation": "Illustrative SVGs and assigned score. Not measured CV or an authenticity probability."
+        },
+        {
+          "label": "Listing wording",
+          "status": "PASS",
+          "detail": "",
+          "originTag": "External",
+          "curationLimitation": "Synthetic local-language text; translation review required"
+        },
+        {
+          "label": "Price deviation",
+          "status": "PASS",
+          "detail": "-2%",
+          "originTag": "Internal",
+          "curationLimitation": "Synthetic MSRP; review discounts and resale context"
+        },
+        {
+          "label": "Seller and rights metadata",
+          "status": "WARN",
+          "detail": "Whitelisted",
+          "originTag": "Internal",
+          "curationLimitation": "Fictional rights and seller records; no independent authentication"
+        }
+      ],
+      "draftTakedownSummary": "Verification request draft · AJOU-SYN-003\n\n1. Observed facts, synthetic data\n\nNo selected items.\n\n2. Suspicious indicators, no authenticity conclusion\n\nNo selected items.\n\n3. Unverified assumptions\n\nSelected inputs are synthetic or simulated. Authenticity, enforceable rights and lawful resale status are not established.\n\n4. Requested human verification\n\n5. Proposed next steps\n\nCollect independent evidence and review rights and resale context. This draft supports investigation and does not request removal or establish infringement.",
+      "analysisSource": "Deterministic Baseline",
+      "caveats": [
+        "Synthetic data and simulated CV. Real-world accuracy is unvalidated.",
+        "High risk is not an infringement conclusion or a removal recommendation."
+      ]
+    }
+  },
+  "AJOU-SYN-004": {
+    "ko": {
+      "classification": "MEDIUM_RISK",
+      "recommendedAction": "HOLD_VERIFICATION",
+      "priceDeviationPct": -31,
+      "suspiciousKeywords": [],
+      "resaleSignals": [],
+      "isLegitimateResaleContext": false,
+      "mandatoryAudit": {
+        "valid": true,
+        "missingFields": [],
+        "reasons": []
+      },
+      "isApprovalLocked": true,
+      "lockReason": "독립적으로 검증된 증거가 없습니다. 합성 자료의 검토 완료는 실제 신고 승인을 해제하지 않습니다.",
+      "rationaleBullets": [
+        "예시 신호 0/3: 문구 없음, New 가격 편차 미해당 (-31%), 시뮬레이션 유사도 기준 이상 (0.88).",
+        "합성 판매자 상태 Unlisted. 정품 리셀·병행수입 가능성은 별도 검토해야 합니다.",
+        "필수 메타데이터 완비. 합성 Active 권리 기록은 독립적으로 인증된 권리가 아닙니다."
+      ],
+      "thresholdExplanation": "예시 기준: 필수 메타데이터 누락 시 HOLD. 다음으로 화이트리스트 판매자는 LOW. 그 외 리셀 단서 + 레플리카 문구 없음 + 시뮬레이션 유사도 >= 0.80이면 LOW. 그 외 HIGH는 2개 이상 신호가 필요합니다: 레플리카 문구, New 상태에서 반올림 가격 편차 <= -60%, 시뮬레이션 유사도 < 0.65. 나머지는 MEDIUM. 미등록 상태 자체는 고위험 신호가 아닙니다. 실제 정확도 검증 없음.",
+      "evidenceChecks": [
+        {
+          "label": "시뮬레이션 시각 유사도",
+          "status": "PASS",
+          "detail": "0.88",
+          "originTag": "External",
+          "curationLimitation": "예시 SVG 그림과 수동 점수입니다. 실제 CV 측정·진위 확률이 아닙니다."
+        },
+        {
+          "label": "리스팅 문구",
+          "status": "PASS",
+          "detail": "",
+          "originTag": "External",
+          "curationLimitation": "합성 현지어 텍스트, 번역 검토 필요"
+        },
+        {
+          "label": "가격 편차",
+          "status": "PASS",
+          "detail": "-31%",
+          "originTag": "Internal",
+          "curationLimitation": "합성 MSRP이며 할인·중고 맥락 검토 필요"
+        },
+        {
+          "label": "판매자·권리 메타데이터",
+          "status": "WARN",
+          "detail": "Unlisted",
+          "originTag": "Internal",
+          "curationLimitation": "가상 권리·판매자 기록, 독립 인증 없음"
+        }
+      ],
+      "draftTakedownSummary": "검증 요청 초안 · AJOU-SYN-004\n\n1. 관찰 사실, 합성 자료\n\n선택된 항목 없음.\n\n2. 의심 지표, 진위 결론 아님\n\n선택된 항목 없음.\n\n3. 미검증 가정\n\n선택된 자료는 합성 또는 시뮬레이션입니다. 진위, 권리 유효성, 리셀 적법성은 확인되지 않았습니다.\n\n4. 요청하는 사람의 검증\n\n5. 제안하는 다음 단계\n\n독립 자료를 수집하고 권리·리셀 맥락을 검토하세요. 현재 초안은 조사용이며 삭제 요청이나 위법성 판단이 아닙니다.",
+      "analysisSource": "Deterministic Baseline",
+      "caveats": [
+        "합성 데이터와 시뮬레이션 CV입니다. 실제 정확도는 검증되지 않았습니다.",
+        "고위험 분류는 침해 결론이나 삭제 권고가 아닙니다."
+      ]
+    },
+    "en": {
+      "classification": "MEDIUM_RISK",
+      "recommendedAction": "HOLD_VERIFICATION",
+      "priceDeviationPct": -31,
+      "suspiciousKeywords": [],
+      "resaleSignals": [],
+      "isLegitimateResaleContext": false,
+      "mandatoryAudit": {
+        "valid": true,
+        "missingFields": [],
+        "reasons": []
+      },
+      "isApprovalLocked": true,
+      "lockReason": "No independently verified evidence. Reviewing synthetic data does not unlock takedown approval.",
+      "rationaleBullets": [
+        "Illustrative signals 0/3: wording not flagged, New price threshold not met (-31%), simulated similarity above cutoff (0.88).",
+        "Synthetic seller status Unlisted. Lawful resale and parallel imports require separate review.",
+        "Mandatory metadata complete. A synthetic Active rights record is not independently authenticated."
+      ],
+      "thresholdExplanation": "Illustrative baseline: missing mandatory metadata gives HOLD. Next, a whitelisted seller gives LOW. Otherwise resale cues + no replica wording + simulated similarity >= 0.80 gives LOW. Otherwise HIGH requires >= 2 signals: replica wording, New condition with rounded price deviation <= -60%, simulated similarity < 0.65. All other cases give MEDIUM. Unlisted status alone is not a high-risk signal. No validated real-world accuracy.",
+      "evidenceChecks": [
+        {
+          "label": "Simulated visual similarity",
+          "status": "PASS",
+          "detail": "0.88",
+          "originTag": "External",
+          "curationLimitation": "Illustrative SVGs and assigned score. Not measured CV or an authenticity probability."
+        },
+        {
+          "label": "Listing wording",
+          "status": "PASS",
+          "detail": "",
+          "originTag": "External",
+          "curationLimitation": "Synthetic local-language text; translation review required"
+        },
+        {
+          "label": "Price deviation",
+          "status": "PASS",
+          "detail": "-31%",
+          "originTag": "Internal",
+          "curationLimitation": "Synthetic MSRP; review discounts and resale context"
+        },
+        {
+          "label": "Seller and rights metadata",
+          "status": "WARN",
+          "detail": "Unlisted",
+          "originTag": "Internal",
+          "curationLimitation": "Fictional rights and seller records; no independent authentication"
+        }
+      ],
+      "draftTakedownSummary": "Verification request draft · AJOU-SYN-004\n\n1. Observed facts, synthetic data\n\nNo selected items.\n\n2. Suspicious indicators, no authenticity conclusion\n\nNo selected items.\n\n3. Unverified assumptions\n\nSelected inputs are synthetic or simulated. Authenticity, enforceable rights and lawful resale status are not established.\n\n4. Requested human verification\n\n5. Proposed next steps\n\nCollect independent evidence and review rights and resale context. This draft supports investigation and does not request removal or establish infringement.",
+      "analysisSource": "Deterministic Baseline",
+      "caveats": [
+        "Synthetic data and simulated CV. Real-world accuracy is unvalidated.",
+        "High risk is not an infringement conclusion or a removal recommendation."
+      ]
+    }
+  },
+  "AJOU-SYN-005": {
+    "ko": {
+      "classification": "HOLD_MISSING_DATA",
+      "recommendedAction": "HOLD_VERIFICATION",
+      "priceDeviationPct": -80,
+      "suspiciousKeywords": [],
+      "resaleSignals": [],
+      "isLegitimateResaleContext": false,
+      "mandatoryAudit": {
+        "valid": false,
+        "missingFields": [
+          "판매자 ID",
+          "수집 타임스탬프(UTC)",
+          "상표권 상태 (BR: Pending)"
+        ],
+        "reasons": [
+          "판매자 식별자가 누락되어 공식 파트너 또는 개인 중고 리셀 여부를 검증할 수 없습니다.",
+          "플랫폼 권리 침해 증빙을 위한 유효한 UTC 수집 시각이 누락되었습니다.",
+          "브라질(BR) 내 유효한 상표권 보호 범위가 아직 확정되지 않았습니다."
+        ]
+      },
+      "isApprovalLocked": true,
+      "lockReason": "필수 메타데이터 보완 필요: 판매자 ID, 수집 타임스탬프(UTC), 상표권 상태 (BR: Pending). 독립 검증도 필요합니다.",
+      "rationaleBullets": [
+        "예시 신호 2/3: 문구 없음, New 가격 편차 해당 (-80%), 시뮬레이션 유사도 낮음 (0.54).",
+        "합성 판매자 상태 Missing. 정품 리셀·병행수입 가능성은 별도 검토해야 합니다.",
+        "필수 메타데이터 누락. 합성 Active 권리 기록은 독립적으로 인증된 권리가 아닙니다."
+      ],
+      "thresholdExplanation": "예시 기준: 필수 메타데이터 누락 시 HOLD. 다음으로 화이트리스트 판매자는 LOW. 그 외 리셀 단서 + 레플리카 문구 없음 + 시뮬레이션 유사도 >= 0.80이면 LOW. 그 외 HIGH는 2개 이상 신호가 필요합니다: 레플리카 문구, New 상태에서 반올림 가격 편차 <= -60%, 시뮬레이션 유사도 < 0.65. 나머지는 MEDIUM. 미등록 상태 자체는 고위험 신호가 아닙니다. 실제 정확도 검증 없음.",
+      "evidenceChecks": [
+        {
+          "label": "시뮬레이션 시각 유사도",
+          "status": "WARN",
+          "detail": "0.54",
+          "originTag": "External",
+          "curationLimitation": "예시 SVG 그림과 수동 점수입니다. 실제 CV 측정·진위 확률이 아닙니다."
+        },
+        {
+          "label": "리스팅 문구",
+          "status": "PASS",
+          "detail": "",
+          "originTag": "External",
+          "curationLimitation": "합성 현지어 텍스트, 번역 검토 필요"
+        },
+        {
+          "label": "가격 편차",
+          "status": "WARN",
+          "detail": "-80%",
+          "originTag": "Internal",
+          "curationLimitation": "합성 MSRP이며 할인·중고 맥락 검토 필요"
+        },
+        {
+          "label": "판매자·권리 메타데이터",
+          "status": "FAIL",
+          "detail": "Missing",
+          "originTag": "Internal",
+          "curationLimitation": "가상 권리·판매자 기록, 독립 인증 없음"
+        }
+      ],
+      "draftTakedownSummary": "검증 요청 초안 · AJOU-SYN-005\n\n1. 관찰 사실, 합성 자료\n\n선택된 항목 없음.\n\n2. 의심 지표, 진위 결론 아님\n\n선택된 항목 없음.\n\n3. 미검증 가정\n\n선택된 자료는 합성 또는 시뮬레이션입니다. 진위, 권리 유효성, 리셀 적법성은 확인되지 않았습니다.\n\n4. 요청하는 사람의 검증\n\n5. 제안하는 다음 단계\n\n독립 자료를 수집하고 권리·리셀 맥락을 검토하세요. 현재 초안은 조사용이며 삭제 요청이나 위법성 판단이 아닙니다.",
+      "analysisSource": "Deterministic Baseline",
+      "caveats": [
+        "합성 데이터와 시뮬레이션 CV입니다. 실제 정확도는 검증되지 않았습니다.",
+        "고위험 분류는 침해 결론이나 삭제 권고가 아닙니다."
+      ]
+    },
+    "en": {
+      "classification": "HOLD_MISSING_DATA",
+      "recommendedAction": "HOLD_VERIFICATION",
+      "priceDeviationPct": -80,
+      "suspiciousKeywords": [],
+      "resaleSignals": [],
+      "isLegitimateResaleContext": false,
+      "mandatoryAudit": {
+        "valid": false,
+        "missingFields": [
+          "Seller ID",
+          "Capture Timestamp",
+          "Trademark Status (BR: Pending)"
+        ],
+        "reasons": [
+          "Seller identifier is missing; cannot verify distributor whitelist or reseller status.",
+          "Valid UTC capture timestamp is required for platform IP evidence.",
+          "Active trademark protection in Brazil (BR) is not confirmed."
+        ]
+      },
+      "isApprovalLocked": true,
+      "lockReason": "Complete mandatory metadata: Seller ID, Capture Timestamp, Trademark Status (BR: Pending). Independent verification is also required.",
+      "rationaleBullets": [
+        "Illustrative signals 2/3: wording not flagged, New price threshold met (-80%), simulated similarity low (0.54).",
+        "Synthetic seller status Missing. Lawful resale and parallel imports require separate review.",
+        "Mandatory metadata incomplete. A synthetic Active rights record is not independently authenticated."
+      ],
+      "thresholdExplanation": "Illustrative baseline: missing mandatory metadata gives HOLD. Next, a whitelisted seller gives LOW. Otherwise resale cues + no replica wording + simulated similarity >= 0.80 gives LOW. Otherwise HIGH requires >= 2 signals: replica wording, New condition with rounded price deviation <= -60%, simulated similarity < 0.65. All other cases give MEDIUM. Unlisted status alone is not a high-risk signal. No validated real-world accuracy.",
+      "evidenceChecks": [
+        {
+          "label": "Simulated visual similarity",
+          "status": "WARN",
+          "detail": "0.54",
+          "originTag": "External",
+          "curationLimitation": "Illustrative SVGs and assigned score. Not measured CV or an authenticity probability."
+        },
+        {
+          "label": "Listing wording",
+          "status": "PASS",
+          "detail": "",
+          "originTag": "External",
+          "curationLimitation": "Synthetic local-language text; translation review required"
+        },
+        {
+          "label": "Price deviation",
+          "status": "WARN",
+          "detail": "-80%",
+          "originTag": "Internal",
+          "curationLimitation": "Synthetic MSRP; review discounts and resale context"
+        },
+        {
+          "label": "Seller and rights metadata",
+          "status": "FAIL",
+          "detail": "Missing",
+          "originTag": "Internal",
+          "curationLimitation": "Fictional rights and seller records; no independent authentication"
+        }
+      ],
+      "draftTakedownSummary": "Verification request draft · AJOU-SYN-005\n\n1. Observed facts, synthetic data\n\nNo selected items.\n\n2. Suspicious indicators, no authenticity conclusion\n\nNo selected items.\n\n3. Unverified assumptions\n\nSelected inputs are synthetic or simulated. Authenticity, enforceable rights and lawful resale status are not established.\n\n4. Requested human verification\n\n5. Proposed next steps\n\nCollect independent evidence and review rights and resale context. This draft supports investigation and does not request removal or establish infringement.",
+      "analysisSource": "Deterministic Baseline",
+      "caveats": [
+        "Synthetic data and simulated CV. Real-world accuracy is unvalidated.",
+        "High risk is not an infringement conclusion or a removal recommendation."
+      ]
+    }
+  }
+}

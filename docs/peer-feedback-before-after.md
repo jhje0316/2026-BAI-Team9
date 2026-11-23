@@ -1,5 +1,7 @@
 # Peer feedback: before and after
 
+This records the original peer-feedback revision. See the [current presentation script](peer-feedback-presentation.md) for the combined demo.
+
 ## Baseline and actual feedback
 
 The clean starting revision was `c080767e95a0699c4afdb030938977cd6fc020ba`. The baseline below was recorded from its source before application edits. The original source was also restored in `/tmp/ajou-peer-before`, run with the installed dependencies on port 3001, and captured as [before-en.png](screenshots/before-en.png). This is an actual browser screenshot of that restored source, not a fabricated mockup.
@@ -86,4 +88,4 @@ Real marketplace collection and submission, independent trademark authentication
 | UI and localization | `src/App.tsx`, `src/components/EvidenceReviewPanel.tsx`, `src/components/TriageDetailWorkspace.tsx`, `src/components/ProductVisualComparison.tsx`, `src/components/ReportPackageModal.tsx`, `src/components/WorkflowContextView.tsx`, `src/i18n/translations.ts` |
 | Server and tooling | `server.ts`, `package.json`, `package-lock.json`, `vite.config.ts`, `.gitignore` |
 | Repeatable checks | `src/domain/triageRules.test.ts`, `src/domain/evidenceReview.test.ts`, `tests/api.test.ts`, `tests/browser/evidence.spec.ts`, `playwright.config.ts`, `scripts/verify-peer-feedback.mjs` |
-| Presentation and evidence | This document, `docs/peer-feedback-verification.md`, `docs/peer-feedback-presentation-en.md`, `docs/peer-feedback-presentation-ko.md`, `docs/screenshots/before-en.png`, `docs/screenshots/after-en.png`, `docs/screenshots/after-ko.png` |
+| Presentation and evidence | This document, `docs/peer-feedback-verification.md`, `docs/peer-feedback-presentation.md`, `docs/screenshots/before-en.png`, `docs/screenshots/after-en.png`, `docs/screenshots/after-ko.png` |

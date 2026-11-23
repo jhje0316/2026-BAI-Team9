@@ -1,6 +1,8 @@
 {
-  "name": "AJOU Brand Protection — Counterfeit Triage Prototype",
-  "description": "AI-assisted single-listing counterfeit risk triage and evidence comparison prototype for AJOU international brand protection.",
+  "name": "AI Anti-Counterfeit Solution",
+  "description": "AI-assisted counterfeit risk review and evidence comparison prototype for the AI and Business course.",
   "requestFramePermissions": [],
-  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
