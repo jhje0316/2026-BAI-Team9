@@ -1,5 +1,5 @@
+import { createReportSnapshot } from './evidenceReview';
 import type {
-  EvidenceCheckItem,
   GenuineSkuReference,
   Locale,
   RiskClassification,
@@ -100,7 +100,7 @@ export function validateMandatoryAuditFields(
     );
   }
 
-  if (!listing.captureTimestamp || listing.captureTimestamp.trim().length === 0) {
+  if (!listing.captureTimestamp || !/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?Z$/.test(listing.captureTimestamp) || !Number.isFinite(Date.parse(listing.captureTimestamp))) {
     missingFields.push(isKo ? '수집 타임스탬프(UTC)' : 'Capture Timestamp');
     reasons.push(
       isKo
@@ -129,243 +129,60 @@ export function validateMandatoryAuditFields(
   };
 }
 
+// Illustrative baseline only. Both scoring and displayed rubric read these constants.
+export const RISK_THRESHOLDS = {
+  highSignalCount: 2, newPriceDeviationPct: -60, lowSimilarity: 0.65, resaleSimilarity: 0.8,
+} as const;
+
+export function getRiskRubric(locale: Locale): string {
+  const t = RISK_THRESHOLDS;
+  return locale === 'ko'
+    ? `예시 기준: 필수 메타데이터 누락 시 HOLD. 다음으로 화이트리스트 판매자는 LOW. 그 외 리셀 단서 + 레플리카 문구 없음 + 시뮬레이션 유사도 >= ${t.resaleSimilarity.toFixed(2)}이면 LOW. 그 외 HIGH는 ${t.highSignalCount}개 이상 신호가 필요합니다: 레플리카 문구, New 상태에서 반올림 가격 편차 <= ${t.newPriceDeviationPct}%, 시뮬레이션 유사도 < ${t.lowSimilarity.toFixed(2)}. 나머지는 MEDIUM. 미등록 상태 자체는 고위험 신호가 아닙니다. 실제 정확도 검증 없음.`
+    : `Illustrative baseline: missing mandatory metadata gives HOLD. Next, a whitelisted seller gives LOW. Otherwise resale cues + no replica wording + simulated similarity >= ${t.resaleSimilarity.toFixed(2)} gives LOW. Otherwise HIGH requires >= ${t.highSignalCount} signals: replica wording, New condition with rounded price deviation <= ${t.newPriceDeviationPct}%, simulated similarity < ${t.lowSimilarity.toFixed(2)}. All other cases give MEDIUM. Unlisted status alone is not a high-risk signal. No validated real-world accuracy.`;
+}
+
 export function evaluateDeterministicTriage(
-  listing: SuspectListingRecord,
-  skuRef: GenuineSkuReference,
-  locale: Locale = 'ko'
+  listing: SuspectListingRecord, skuRef: GenuineSkuReference, locale: Locale = 'ko',
 ): TriageEvaluation {
-  const isKo = locale === 'ko';
+  const ko = locale === 'ko';
   const priceDeviationPct = calculatePriceDeviationPct(listing.listedPrice, listing.officialMsrp);
   const suspiciousKeywords = detectSuspiciousKeywords(listing.listingTitle, listing.listingDescription);
   const resaleSignals = detectResaleSignals(listing.listingTitle, listing.listingDescription, listing.condition);
-  const isLegitimateResaleContext =
-    listing.sellerStatus !== 'Whitelisted' &&
-    resaleSignals.length > 0 &&
-    suspiciousKeywords.length === 0 &&
-    listing.visualSimilarityScore >= 0.8;
-
+  const isLegitimateResaleContext = listing.sellerStatus !== 'Whitelisted' && resaleSignals.length > 0 &&
+    suspiciousKeywords.length === 0 && listing.visualSimilarityScore >= RISK_THRESHOLDS.resaleSimilarity;
   const mandatoryAudit = validateMandatoryAuditFields(listing, locale);
-  const visualObs = isKo ? listing.visualObservationKo : listing.visualObservation;
-  const productName = isKo ? skuRef.productNameKo : skuRef.productName;
-  const countryName = isKo ? listing.targetCountryNameKo : listing.targetCountryName;
-
-  let classification: RiskClassification;
-  let recommendedAction: TriageEvaluation['recommendedAction'];
-  const rationaleBullets: string[] = [];
-  let thresholdExplanation = '';
-
-  if (!mandatoryAudit.valid) {
-    classification = 'HOLD_MISSING_DATA';
-    recommendedAction = 'HOLD_VERIFICATION';
-    rationaleBullets.push(
-      isKo
-        ? `필수 감사 게이트 미통과: ${mandatoryAudit.missingFields.join(', ')}.`
-        : `Mandatory evidence gate failed: ${mandatoryAudit.missingFields.join(', ')}.`,
-      isKo
-        ? `가격은 공식 MSRP 대비 ${priceDeviationPct}%(${listing.currency}${listing.officialMsrp}) 수준이나, 불완전한 메타데이터로 침해 단정을 보류합니다.`
-        : `Price shows ${priceDeviationPct}% vs. MSRP (${listing.currency}${listing.officialMsrp}), but incomplete metadata blocks infringement conclusion.`,
-      isKo
-        ? `시각 유사도(${listing.visualSimilarityScore.toFixed(2)})만으로는 누락된 수집 시각이나 ${listing.targetCountryCode} 상표권 확인을 대체할 수 없습니다.`
-        : `Visual match (${listing.visualSimilarityScore.toFixed(2)}) cannot override missing audit timestamp or unverified ${listing.targetCountryCode} trademark scope.`
-    );
-    thresholdExplanation = isKo
-      ? 'HOLD_MISSING_DATA는 데이터 큐레이션 규칙에 따라 SKU, 판매자 ID, 수집 타임스탬프, 국가별 유효 상표권 중 하나라도 누락·미확인일 때 자동 발동하여 위법한 신고 제출을 원천 차단합니다.'
-      : 'HOLD_MISSING_DATA triggers whenever SKU, Seller ID, Capture Timestamp, or Active Regional Trademark Scope is missing—preventing unlawful takedown filings.';
-  } else if (listing.sellerStatus === 'Whitelisted') {
-    classification = 'LOW_RISK';
-    recommendedAction = 'DISMISSED_LEGITIMATE';
-    rationaleBullets.push(
-      isKo
-        ? `판매자 "${listing.sellerId}"가 ${listing.targetCountryCode} 공식 유통 파트너 화이트리스트와 일치합니다.`
-        : `Seller "${listing.sellerId}" matches active ${listing.targetCountryCode} authorized distributor whitelist.`,
-      isKo
-        ? `판매가 편차(${priceDeviationPct}% vs. MSRP)가 정상 공식 리테일 허용 범위 내에 있습니다.`
-        : `Listed price (${priceDeviationPct}% vs. MSRP) falls within normal authorized retail variance.`,
-      isKo
-        ? `시각 레퍼런스 일치도는 ${listing.visualSimilarityScore.toFixed(2)}입니다 (${visualObs}).`
-        : `Visual reference match is ${listing.visualSimilarityScore.toFixed(2)} (${visualObs}).`
-    );
-    thresholdExplanation = isKo
-      ? 'LOW RISK는 공식 화이트리스트 파트너이거나, 레플리카 문구 없이 높은 시각 일치도(>=0.80)와 정당한 중고 리셀 맥락이 확인될 때 적용됩니다.'
-      : 'LOW RISK applies when seller is whitelisted or legitimate secondhand context aligns with high visual authenticity (>= 0.80) and zero replica claims.';
-  } else if (isLegitimateResaleContext) {
-    classification = 'LOW_RISK';
-    recommendedAction = 'DISMISSED_LEGITIMATE';
-    rationaleBullets.push(
-      isKo
-        ? `최초판매·중고 리셀 맥락(${resaleSignals.join(', ')})이 감지되어 MSRP 대비 ${priceDeviationPct}% 할인 가격이 설명됩니다.`
-        : `First-sale / resale context detected (${resaleSignals.join(', ')}), explaining ${priceDeviationPct}% below MSRP.`,
-      isKo
-        ? `높은 시각 일치도(${listing.visualSimilarityScore.toFixed(2)}) 확인: ${visualObs}.`
-        : `High visual authenticity (${listing.visualSimilarityScore.toFixed(2)}): ${visualObs}.`,
-      isKo
-        ? '레플리카 표현이 없는 정품 중고 개인 판매는 화이트리스트 미등록 판매자더라도 상표권 침해로 간주하지 않습니다.'
-        : 'Unlisted individual seller does not indicate infringement when authentic secondhand goods are sold without replica claims.'
-    );
-    thresholdExplanation = isKo
-      ? 'LOW RISK(정상 리셀)는 미등록 판매자라도 중고 상태·영수증 등 최초판매 단서와 높은 시각 정품 일치도(>=0.80)가 함께 나타날 때 위조품과 구분합니다.'
-      : 'LOW RISK (Resale) separates lawful secondhand listings (high visual match >= 0.80 + resale context) from unauthorized new counterfeit stock.';
-  } else if (
-    suspiciousKeywords.length > 0 ||
-    (priceDeviationPct <= -60 && listing.visualSimilarityScore < 0.75) ||
-    listing.visualSimilarityScore < 0.65
-  ) {
-    classification = 'HIGH_RISK';
-    recommendedAction = 'APPROVED_TAKEDOWN';
-    if (suspiciousKeywords.length > 0) {
-      rationaleBullets.push(
-        isKo
-          ? `NLP가 명시적 위조·레플리카 문구를 탐지했습니다: ${suspiciousKeywords.map((k) => `"${k}"`).join(', ')}.`
-          : `NLP detected explicit counterfeit/replica phrasing: ${suspiciousKeywords.map((k) => `"${k}"`).join(', ')}.`
-      );
-    }
-    rationaleBullets.push(
-      isKo
-        ? `"New" 상품 조건에서 ${listing.targetCountryCode} 공식 MSRP 대비 ${priceDeviationPct}%의 심각한 가격 이상치(${listing.currency}${listing.listedPrice} vs. ${listing.currency}${listing.officialMsrp})가 확인됩니다.`
-        : `Severe price anomaly of ${priceDeviationPct}% below official ${listing.targetCountryCode} MSRP (${listing.currency}${listing.listedPrice} vs. ${listing.currency}${listing.officialMsrp}) for "New" condition.`,
-      isKo
-        ? `시뮬레이션 CV 유사도가 낮습니다(${listing.visualSimilarityScore.toFixed(2)}): ${visualObs}.`
-        : `Simulated CV similarity is low (${listing.visualSimilarityScore.toFixed(2)}): ${visualObs}.`,
-      isKo
-        ? `판매자 "${listing.sellerId}"는 ${listing.targetCountryCode} 공식 유통사가 아니며, 활성 상표권(${skuRef.rightsRecordId})이 확인되었습니다.`
-        : `Seller "${listing.sellerId}" is unlisted in ${listing.targetCountryCode} distributor records; active trademark ${skuRef.rightsRecordId} confirmed.`
-    );
-    thresholdExplanation = isKo
-      ? 'HIGH RISK는 명시적 레플리카 키워드, 새상품 기준 MSRP 대비 60% 초과 저가 판매, 또는 CV 유사도 0.65 미만 중 2개 이상의 위조 신호가 수렴할 때 부여됩니다.'
-      : 'HIGH RISK requires >= 2 converging signals: explicit replica wording, >60% below MSRP on new stock, or CV similarity < 0.65 against genuine references.';
-  } else {
-    classification = 'MEDIUM_RISK';
-    recommendedAction = 'HOLD_VERIFICATION';
-    rationaleBullets.push(
-      isKo
-        ? `미등록 판매자 "${listing.sellerId}"의 "New / Sealed" 상품에서 MSRP 대비 ${priceDeviationPct}% 수준의 중간 가격 편차가 관찰됩니다.`
-        : `Moderate price gap (${priceDeviationPct}% vs. MSRP) for "New / Sealed" inventory from unlisted seller "${listing.sellerId}".`,
-      isKo
-        ? `패키징과 실루엣은 정품 레퍼런스와 유사(${listing.visualSimilarityScore.toFixed(2)})하나, ${visualObs}.`
-        : `Packaging and silhouette closely match genuine reference (${listing.visualSimilarityScore.toFixed(2)}), but ${visualObs.toLowerCase()}.`,
-      isKo
-        ? '명시적 레플리카 문구는 없으므로 위조 제조가 아닌 무단 병행수입(Grey Market) 유통 여부를 추가 검증해야 합니다.'
-        : 'No explicit replica wording detected; could indicate unauthorized grey-market diversion rather than counterfeit manufacturing.'
-    );
-    thresholdExplanation = isKo
-      ? 'MEDIUM RISK는 레플리카 문구 없이 외관이 정품과 유사(-20%~-55% MSRP 편차)한 미등록 판매자 사례에 적용되며, 정식 신고 전 병행수입 출처 확인을 권고합니다.'
-      : 'MEDIUM RISK applies to edge cases (e.g., authentic-looking new items from unlisted sellers at -20% to -55% MSRP without replica terms) requiring grey-market verification before IP filing.';
-  }
-
-  const isApprovalLocked = !mandatoryAudit.valid;
-  const lockReason = isApprovalLocked
-    ? isKo
-      ? `신고 승인 잠금: ${mandatoryAudit.missingFields.join(', ')} 항목을 검증·보완해야 신고서 승인이 가능합니다.`
-      : `Report approval locked: complete ${mandatoryAudit.missingFields.join(', ')} to unlock takedown submission.`
-    : null;
-
-  const evidenceChecks: EvidenceCheckItem[] = [
-    {
-      label: isKo ? '이미지 및 실루엣 대조' : 'Visual & Silhouette Match',
-      status:
-        listing.visualSimilarityScore >= 0.85
-          ? 'PASS'
-          : listing.visualSimilarityScore >= 0.65
-            ? 'WARN'
-            : 'FAIL',
-      detail: `${listing.visualSimilarityScore.toFixed(2)} · ${visualObs}`,
-      originTag: 'External',
-      curationLimitation: isKo
-        ? '데이터 큐레이션 한계: 스튜디오 정품 사진 대비 실물 리스팅의 저해상도·크롭·비정형 각도는 CV 유사도를 낮출 수 있음.'
-        : 'Data limitation: Low-res, cropped, or user-taken angles reduce visual match reliability vs. studio catalog photos.',
-    },
-    {
-      label: isKo ? '리스팅 텍스트 및 표현' : 'Listing Language & Claims',
-      status: suspiciousKeywords.length > 0 ? 'FAIL' : 'PASS',
-      detail:
-        suspiciousKeywords.length > 0
-          ? isKo
-            ? `의심 표현 탐지: ${suspiciousKeywords.join(', ')}`
-            : `Flagged terms: ${suspiciousKeywords.join(', ')}`
-          : isLegitimateResaleContext
-            ? isKo
-              ? `중고 리셀 단서: ${resaleSignals.join(', ')}`
-              : `Secondhand cues: ${resaleSignals.join(', ')}`
-            : isKo
-              ? '위조·레플리카 표현 미탐지'
-              : 'No counterfeit phrasing detected',
-      originTag: 'External',
-      curationLimitation: isKo
-        ? '데이터 큐레이션 한계: 현지어 번역이나 은어·슬랭 문구 해석 시 오탐(False Positive) 가능.'
-        : 'Data limitation: Translated or slang terms may cause false positives; external listing text may be noisy.',
-    },
-    {
-      label: isKo ? '공식 MSRP 대비 가격 편차' : 'Price vs. Official MSRP',
-      status:
-        priceDeviationPct <= -60 && !isLegitimateResaleContext
-          ? 'FAIL'
-          : priceDeviationPct <= -20
-            ? 'WARN'
-            : 'PASS',
-      detail: `${listing.currency}${listing.listedPrice.toLocaleString()} vs. ${listing.currency}${listing.officialMsrp.toLocaleString()} (${priceDeviationPct}%)`,
-      originTag: 'Internal',
-      curationLimitation: isKo
-        ? '데이터 큐레이션 한계: 환율 변동, 정상 시즌 할인, 중고 시세가 위조품의 저가 할인 패턴과 유사할 수 있음.'
-        : 'Data limitation: Currency shifts, seasonal discounts, or secondhand pricing can mimic counterfeit discounting.',
-    },
-    {
-      label: isKo ? '판매자 권한 및 국가별 상표권' : 'Seller & Regional IP Scope',
-      status: !mandatoryAudit.valid
-        ? 'FAIL'
-        : listing.sellerStatus === 'Whitelisted' || isLegitimateResaleContext
-          ? 'PASS'
-          : 'WARN',
-      detail: !mandatoryAudit.valid
-        ? isKo
-          ? `누락/대기: ${mandatoryAudit.missingFields.join(', ')}`
-          : `Missing/Pending: ${mandatoryAudit.missingFields.join(', ')}`
-        : `${listing.sellerStatus} (${listing.sellerId}) · ${listing.targetCountryCode} TM ${listing.trademarkStatus}`,
-      originTag: !mandatoryAudit.valid ? 'Newly Collected' : 'Internal',
-      curationLimitation: isKo
-        ? '데이터 큐레이션 한계: 화이트리스트 미등록만으로 침해가 입증되지 않으며, 타임스탬프·상표권 누락 시 위법 신고 위험.'
-        : 'Data limitation: Whitelist updates lag behind new partnerships; missing timestamp or IP scope blocks lawful takedowns.',
-    },
+  const wordingSignal = suspiciousKeywords.length > 0;
+  const priceSignal = listing.condition === 'New' && priceDeviationPct <= RISK_THRESHOLDS.newPriceDeviationPct;
+  const visualSignal = listing.visualSimilarityScore < RISK_THRESHOLDS.lowSimilarity;
+  const signalCount = [wordingSignal, priceSignal, visualSignal].filter(Boolean).length;
+  const classification: RiskClassification = !mandatoryAudit.valid ? 'HOLD_MISSING_DATA'
+    : listing.sellerStatus === 'Whitelisted' || isLegitimateResaleContext ? 'LOW_RISK'
+    : signalCount >= RISK_THRESHOLDS.highSignalCount ? 'HIGH_RISK' : 'MEDIUM_RISK';
+  const recommendedAction = classification === 'LOW_RISK' ? 'DISMISSED_LEGITIMATE' : 'HOLD_VERIFICATION';
+  const rationaleBullets = [
+    ko ? `예시 신호 ${signalCount}/3: 문구 ${wordingSignal ? '있음' : '없음'}, New 가격 편차 ${priceSignal ? '해당' : '미해당'} (${priceDeviationPct}%), 시뮬레이션 유사도 ${visualSignal ? '낮음' : '기준 이상'} (${listing.visualSimilarityScore.toFixed(2)}).`
+      : `Illustrative signals ${signalCount}/3: wording ${wordingSignal ? 'flagged' : 'not flagged'}, New price threshold ${priceSignal ? 'met' : 'not met'} (${priceDeviationPct}%), simulated similarity ${visualSignal ? 'low' : 'above cutoff'} (${listing.visualSimilarityScore.toFixed(2)}).`,
+    isLegitimateResaleContext
+      ? ko ? '최초판매·중고 리셀 단서가 있습니다. 미등록 판매자라는 이유만으로 침해로 분류하지 않습니다.' : 'First-sale / resale cues are present. Unlisted status alone does not indicate infringement.'
+      : ko ? `합성 판매자 상태 ${listing.sellerStatus}. 정품 리셀·병행수입 가능성은 별도 검토해야 합니다.` : `Synthetic seller status ${listing.sellerStatus}. Lawful resale and parallel imports require separate review.`,
+    ko ? `필수 메타데이터 ${mandatoryAudit.valid ? '완비' : '누락'}. 합성 Active 권리 기록은 독립적으로 인증된 권리가 아닙니다.` : `Mandatory metadata ${mandatoryAudit.valid ? 'complete' : 'incomplete'}. A synthetic Active rights record is not independently authenticated.`,
   ];
-
-  const draftTakedownSummary = !mandatoryAudit.valid
-    ? isKo
-      ? `[승인 차단 — 필수 증거 누락] ${mandatoryAudit.missingFields.join(', ')} 항목 검증 완료 전까지 플랫폼 신고서 초안을 생성할 수 없습니다.`
-      : `[BLOCKED — INCOMPLETE EVIDENCE] Cannot generate platform takedown report until ${mandatoryAudit.missingFields.join(', ')} ${mandatoryAudit.missingFields.length === 1 ? 'is' : 'are'} verified.`
-    : classification === 'HIGH_RISK'
-      ? isKo
-        ? `상표권 및 디자인권 침해 신고 초안 (${skuRef.rightsRecordId}): ${listing.marketplace}에 게시된 리스팅 ${listing.id}("${listing.listingTitle}")은 공식 판매자(${countryName})가 아닌 "${listing.sellerId}"가 AJOU(${productName}, ${skuRef.sku})를 무단 인용해 MSRP 대비 ${priceDeviationPct}% 저가(${listing.currency}${listing.listedPrice} vs. ${listing.currency}${listing.officialMsrp})로 판매 중입니다. ${listing.captureTimestamp} 채증 기준 시각 점검 결과 ${visualObs}이(가) 확인되어 즉시 삭제를 요청합니다.`
-        : `Notice of Trademark & Design Infringement (${skuRef.rightsRecordId}): Listing ${listing.id} on ${listing.marketplace} ("${listing.listingTitle}") unlawfully references AJOU (${skuRef.productName}, ${skuRef.sku}) while offering unauthorized goods at ${priceDeviationPct}% below official MSRP (${listing.currency}${listing.listedPrice} vs. ${listing.currency}${listing.officialMsrp}). Captured ${listing.captureTimestamp}, seller "${listing.sellerId}" is not an authorized ${countryName} distributor, and visual inspection confirms ${visualObs.toLowerCase()}. Request immediate listing removal.`
-      : classification === 'MEDIUM_RISK'
-        ? isKo
-          ? `사전 확인 보류 요청 (${skuRef.rightsRecordId}): ${listing.marketplace} 내 미등록 판매자 "${listing.sellerId}"의 리스팅 ${listing.id}("${listing.listingTitle}")는 정품과 유사한 패키징(${listing.visualSimilarityScore.toFixed(2)})을 보이나 MSRP 대비 ${priceDeviationPct}% 가격에 판매 중입니다. 공식 IP 신고 전 지역 유통망을 통해 병행수입 여부를 확인해야 합니다.`
-          : `Preliminary Verification Hold (${skuRef.rightsRecordId}): Listing ${listing.id} ("${listing.listingTitle}") offered by unlisted seller "${listing.sellerId}" on ${listing.marketplace} shows genuine-looking packaging (${listing.visualSimilarityScore.toFixed(2)} match) at ${priceDeviationPct}% below MSRP. Escalate to regional distributor check for grey-market diversion before submitting formal IP takedown.`
-        : isKo
-          ? `침해 신고 미권고: 판매자 "${listing.sellerId}"의 리스팅 ${listing.id}("${listing.listingTitle}")는 ${listing.sellerStatus === 'Whitelisted' ? '공식 유통 파트너 기록' : '정품 중고 최초판매 리셀 맥락'} 및 높은 시각 일치도(${listing.visualSimilarityScore.toFixed(2)})와 부합합니다.`
-          : `No Infringement Filing Recommended: Listing ${listing.id} ("${listing.listingTitle}") by "${listing.sellerId}" aligns with ${listing.sellerStatus === 'Whitelisted' ? 'authorized distributor records' : 'lawful secondhand first-sale resale context'} and authentic visual indicators (${listing.visualSimilarityScore.toFixed(2)} match).`;
-
   return {
-    classification,
-    priceDeviationPct,
-    suspiciousKeywords,
-    resaleSignals,
-    isLegitimateResaleContext,
-    mandatoryAudit,
-    isApprovalLocked,
-    lockReason,
-    rationaleBullets,
-    thresholdExplanation,
-    evidenceChecks,
-    draftTakedownSummary,
-    recommendedAction,
+    classification, recommendedAction, priceDeviationPct, suspiciousKeywords, resaleSignals, isLegitimateResaleContext,
+    mandatoryAudit, isApprovalLocked: true,
+    lockReason: !mandatoryAudit.valid
+      ? ko ? `필수 메타데이터 보완 필요: ${mandatoryAudit.missingFields.join(', ')}. 독립 검증도 필요합니다.` : `Complete mandatory metadata: ${mandatoryAudit.missingFields.join(', ')}. Independent verification is also required.`
+      : ko ? '독립적으로 검증된 증거가 없습니다. 합성 자료의 검토 완료는 실제 신고 승인을 해제하지 않습니다.' : 'No independently verified evidence. Reviewing synthetic data does not unlock takedown approval.',
+    rationaleBullets, thresholdExplanation: getRiskRubric(locale),
+    evidenceChecks: [
+      { label: ko ? '시뮬레이션 시각 유사도' : 'Simulated visual similarity', status: visualSignal ? 'WARN' : 'PASS', detail: listing.visualSimilarityScore.toFixed(2), originTag: 'External', curationLimitation: ko ? '예시 SVG 그림과 수동 점수입니다. 실제 CV 측정·진위 확률이 아닙니다.' : 'Illustrative SVGs and assigned score. Not measured CV or an authenticity probability.' },
+      { label: ko ? '리스팅 문구' : 'Listing wording', status: wordingSignal ? 'WARN' : 'PASS', detail: suspiciousKeywords.join(', '), originTag: 'External', curationLimitation: ko ? '합성 현지어 텍스트, 번역 검토 필요' : 'Synthetic local-language text; translation review required' },
+      { label: ko ? '가격 편차' : 'Price deviation', status: priceSignal ? 'WARN' : 'PASS', detail: `${priceDeviationPct}%`, originTag: 'Internal', curationLimitation: ko ? '합성 MSRP이며 할인·중고 맥락 검토 필요' : 'Synthetic MSRP; review discounts and resale context' },
+      { label: ko ? '판매자·권리 메타데이터' : 'Seller and rights metadata', status: mandatoryAudit.valid ? 'WARN' : 'FAIL', detail: listing.sellerStatus, originTag: 'Internal', curationLimitation: ko ? '가상 권리·판매자 기록, 독립 인증 없음' : 'Fictional rights and seller records; no independent authentication' },
+    ],
+    draftTakedownSummary: createReportSnapshot(listing.id, [], {}, locale).text,
     analysisSource: 'Deterministic Baseline',
-    caveats: isKo
-      ? [
-          'CV 시각 유사도 수치와 ERP/화이트리스트 레코드는 합성 시뮬레이션 입력입니다.',
-          '담당자는 최종 승인 전 국가별 상표권 유효성과 정품 중고 리셀 여부를 직접 확인해야 합니다.',
-        ]
-      : [
-          'CV similarity score and ERP/whitelist records are simulated synthetic inputs.',
-          'Specialist must verify regional trademark scope and lawful resale status before action.',
-        ],
+    caveats: ko ? ['합성 데이터와 시뮬레이션 CV입니다. 실제 정확도는 검증되지 않았습니다.', '고위험 분류는 침해 결론이나 삭제 권고가 아닙니다.']
+      : ['Synthetic data and simulated CV. Real-world accuracy is unvalidated.', 'High risk is not an infringement conclusion or a removal recommendation.'],
   };
 }

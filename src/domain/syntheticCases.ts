@@ -75,8 +75,8 @@ export const SYNTHETIC_LISTING_CASES: SuspectListingRecord[] = [
   {
     id: 'AJOU-SYN-001',
     demoOrder: 1,
-    scenarioLabel: 'Clear Counterfeit',
-    scenarioLabelKo: '명백한 위조품',
+    scenarioLabel: 'High-risk signals',
+    scenarioLabelKo: '고위험 신호 사례',
     marketplace: 'MercadoFashion ES',
     targetCountryCode: 'ES',
     targetCountryName: 'Spain',
